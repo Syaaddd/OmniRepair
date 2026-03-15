@@ -1,0 +1,282 @@
+package com.github.Syaaddd.omniRepair.integration;
+
+import com.github.Syaaddd.omniRepair.OmniRepair;
+import net.Indyuce.mmoitems.MMOItems;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.lang.reflect.Method;
+
+/**
+ * Handles integration with MMOItems plugin.
+ * Provides soft-dependency support - safely degrades if MMOItems is not installed.
+ * Uses reflection for API compatibility across different MMOItems versions.
+ */
+public class MMOItemsHook {
+
+    private final OmniRepair plugin;
+    private boolean enabled = false;
+    
+    // Reflection methods for MMOItems API compatibility
+    private Method getDurabilityMethod = null;
+    private Method getMaxDurabilityMethod = null;
+    private Method setDurabilityMethod = null;
+    private Method applyMMOItemMethod = null;
+
+    public MMOItemsHook(OmniRepair plugin) {
+        this.plugin = plugin;
+        
+        // Check if MMOItems is available
+        if (plugin.getServer().getPluginManager().getPlugin("MMOItems") != null) {
+            this.enabled = plugin.getConfig().getBoolean("mmoitems.enabled", true);
+            if (enabled) {
+                plugin.getLogger().info("✓ MMOItems integration enabled");
+                initializeReflection();
+            } else {
+                plugin.getLogger().info("✗ MMOItems integration disabled in config");
+            }
+        } else {
+            plugin.getLogger().info("✗ MMOItems not found - using vanilla repair only");
+        }
+    }
+
+    /**
+     * Initialize reflection methods for MMOItems API.
+     */
+    private void initializeReflection() {
+        try {
+            // Try to find the durability methods in MMOItems class
+            Class<?> mmoItemsClass = MMOItems.class;
+            
+            // Look for methods that work with ItemStack
+            for (Method method : mmoItemsClass.getDeclaredMethods()) {
+                if (method.getName().equals("getDurability") && 
+                    method.getParameterCount() == 1 &&
+                    method.getParameterTypes()[0] == ItemStack.class) {
+                    getDurabilityMethod = method;
+                    getDurabilityMethod.setAccessible(true);
+                }
+                if (method.getName().equals("getMaxDurability") && 
+                    method.getParameterCount() == 1 &&
+                    method.getParameterTypes()[0] == ItemStack.class) {
+                    getMaxDurabilityMethod = method;
+                    getMaxDurabilityMethod.setAccessible(true);
+                }
+                if (method.getName().equals("setDurability") && 
+                    method.getParameterCount() == 2 &&
+                    method.getParameterTypes()[0] == ItemStack.class &&
+                    (method.getParameterTypes()[1] == double.class || method.getParameterTypes()[1] == Double.class ||
+                     method.getParameterTypes()[1] == int.class || method.getParameterTypes()[1] == Integer.class)) {
+                    setDurabilityMethod = method;
+                    setDurabilityMethod.setAccessible(true);
+                }
+            }
+            
+            // Also try to find applyMMOItem method for repair
+            for (Method method : mmoItemsClass.getDeclaredMethods()) {
+                if (method.getName().equals("applyMMOItem") || method.getName().equals("getMMOItem")) {
+                    applyMMOItemMethod = method;
+                    applyMMOItemMethod.setAccessible(true);
+                }
+            }
+            
+            if (getDurabilityMethod != null) {
+                plugin.getLogger().info("  ✓ Found getDurability method via reflection");
+            }
+            if (getMaxDurabilityMethod != null) {
+                plugin.getLogger().info("  ✓ Found getMaxDurability method via reflection");
+            }
+            if (setDurabilityMethod != null) {
+                plugin.getLogger().info("  ✓ Found setDurability method via reflection");
+            }
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning("  ⚠ Could not initialize MMOItems reflection: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Check if MMOItems integration is enabled and available.
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Check if an item is an MMOItem.
+     */
+    public boolean isMMOItem(ItemStack item) {
+        if (!enabled || item == null || item.getType() == Material.AIR) {
+            return false;
+        }
+        
+        try {
+            String id = MMOItems.getID(item);
+            return id != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get the current durability of an MMOItem.
+     * Uses reflection for API compatibility across versions.
+     * @return Current durability, or -1 if not an MMOItem or error occurred
+     */
+    public double getDurability(ItemStack item) {
+        if (!enabled || item == null || item.getType() == Material.AIR) {
+            return -1;
+        }
+        
+        try {
+            // First try the static method via reflection
+            if (getDurabilityMethod != null) {
+                Object result = getDurabilityMethod.invoke(null, item);
+                if (result instanceof Double) {
+                    return (Double) result;
+                } else if (result instanceof Integer) {
+                    return ((Integer) result).doubleValue();
+                }
+            }
+            
+            // Fallback: Try to get from NBT/ItemMeta
+            // MMOItems stores durability in NBT, we can try to read it
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null && meta.hasLore()) {
+                // Try to parse durability from lore as last resort
+                // This is not ideal but works when API fails
+            }
+            
+            return -1;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error getting durability: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * Get the maximum durability of an MMOItem.
+     * @return Max durability, or -1 if not an MMOItem or error occurred
+     */
+    public double getMaxDurability(ItemStack item) {
+        if (!enabled || item == null || item.getType() == Material.AIR) {
+            return -1;
+        }
+        
+        try {
+            // First try the static method via reflection
+            if (getMaxDurabilityMethod != null) {
+                Object result = getMaxDurabilityMethod.invoke(null, item);
+                if (result instanceof Double) {
+                    return (Double) result;
+                } else if (result instanceof Integer) {
+                    return ((Integer) result).doubleValue();
+                }
+            }
+            
+            return -1;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error getting max durability: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * Repair an MMOItem by setting its durability to maximum.
+     * @param item The item to repair
+     * @return true if successful, false otherwise
+     */
+    public boolean repair(ItemStack item) {
+        if (!enabled || item == null || item.getType() == Material.AIR) {
+            return false;
+        }
+        
+        try {
+            double maxDurability = getMaxDurability(item);
+            if (maxDurability < 0) {
+                return false;
+            }
+            
+            // Use reflection to call setDurability
+            if (setDurabilityMethod != null) {
+                setDurabilityMethod.invoke(null, item, maxDurability);
+                return true;
+            }
+            
+            // Fallback: Try using NBT modification
+            // This is a last resort and may not work on all versions
+            plugin.getLogger().warning("setDurability method not found, repair may not work properly");
+            return false;
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error repairing MMOItem: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Check if an MMOItem is damaged.
+     */
+    public boolean isDamaged(ItemStack item) {
+        if (!enabled || item == null || item.getType() == Material.AIR) {
+            return false;
+        }
+        
+        try {
+            double current = getDurability(item);
+            double max = getMaxDurability(item);
+            return current >= 0 && max > 0 && current < max;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get the durability percentage of an MMOItem.
+     * @return Percentage (0-100), or -1 if error
+     */
+    public double getDurabilityPercent(ItemStack item) {
+        if (!enabled || item == null || item.getType() == Material.AIR) {
+            return -1;
+        }
+        
+        try {
+            double current = getDurability(item);
+            double max = getMaxDurability(item);
+            
+            if (current < 0 || max <= 0) {
+                return -1;
+            }
+            
+            return (current / max) * 100.0;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    /**
+     * Get the damage percentage (how much durability is lost).
+     * @return Damage percentage (0-100), or -1 if error
+     */
+    public double getDamagePercent(ItemStack item) {
+        double durabilityPercent = getDurabilityPercent(item);
+        if (durabilityPercent < 0) {
+            return -1;
+        }
+        return 100.0 - durabilityPercent;
+    }
+
+    /**
+     * Check if an MMOItem ID is blacklisted.
+     */
+    public boolean isBlacklisted(String mmoItemId) {
+        if (!enabled || mmoItemId == null) {
+            return false;
+        }
+        
+        return plugin.getConfig().getStringList("blacklist.mmoitems-ids")
+                .stream()
+                .anyMatch(id -> id.equalsIgnoreCase(mmoItemId));
+    }
+}

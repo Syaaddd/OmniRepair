@@ -1,0 +1,145 @@
+# ╔════════════════════════════════════════════════════════════════╗
+# #                  OmniRepair Messages Configuration              #
+# #         Customize all plugin messages here (supports colors)    #
+# ╚════════════════════════════════════════════════════════════════╝
+
+# Prefix for all messages
+prefix: "&8[&6OmniRepair&8] "
+
+# ═══════════════════════════════════════════════════════════════
+# GENERAL MESSAGES
+# ═══════════════════════════════════════════════════════════════
+
+general:
+  reload-success: "&aConfiguration reloaded!"
+  reload-failed: "&cFailed to reload configuration! Check console for errors."
+  no-permission: "&cYou don't have permission to do that!"
+  player-only: "&cThis command can only be used by players!"
+  unknown-command: "&cUnknown command. Use &e/repair help &cfor help."
+  help-header: "&8&m═══════════════════════════════════════════════════════"
+  help-line: "&e/repair &7- Open repair GUI"
+  help-line-hand: "&e/repair hand &7- Repair held item instantly"
+  help-line-all: "&e/repair all &7- Repair all inventory items"
+  help-line-reload: "&e/repair reload &7- Reload configuration (Admin)"
+  help-footer: "&8&m═══════════════════════════════════════════════════════"
+
+# ═══════════════════════════════════════════════════════════════
+# REPAIR MESSAGES
+# ═══════════════════════════════════════════════════════════════
+
+repair:
+  success: "&a✓ Successfully repaired your item! Cost: &e${cost}"
+  success-bulk: "&a✓ Repaired &e{amount} &aitems! Total cost: &e${cost}"
+  success-free: "&a✓ Successfully repaired your item! &7(Free)"
+  
+  # Item is not damaged
+  not-damaged: "&cThis item is not damaged!"
+  
+  # Item is blacklisted
+  blacklisted: "&cThis item cannot be repaired!"
+  blacklisted-material: "&cThis material is blacklisted from repair!"
+  blacklisted-lore: "&cThis item has lore that prevents repair!"
+  blacklisted-name: "&cThis item's name prevents repair!"
+  
+  # Soulbound protection
+  soulbound: "&cThis item is soulbound! You cannot repair it."
+  
+  # Economy issues
+  insufficient-funds: "&cInsufficient funds! You need &e${needed} &cbut have &e${balance}."
+  insufficient-items: "&cInsufficient items! You need &e{amount}x {item}."
+  insufficient-xp: "&cInsufficient XP! You need &e{needed} &clevels."
+  
+  # Cost too high
+  cost-too-high: "&cRepair cost exceeds maximum limit! Max: &e${max}"
+  
+  # Inventory full (for bulk repair)
+  inventory-full: "&cYour inventory is full!"
+  
+  # No items to repair
+  no-items-to-repair: "&cNo damaged items found in your inventory!"
+  
+  # MMOItems specific
+  mmoitems-not-detected: "&cMMOItems durability not detected. Using vanilla repair."
+  mmoitems-repair-success: "&a✓ MMOItem repaired successfully!"
+
+# ═══════════════════════════════════════════════════════════════
+# GUI MESSAGES
+# ═══════════════════════════════════════════════════════════════
+
+gui:
+  # Title (should match config.yml)
+  title: "&8&l🔨 RPG Mender"
+  
+  # Item lore in preview slot
+  preview-durability: "&7Durability: &c{current} &7/ &a{max}"
+  preview-damage-percent: "&7Damage: &e{percent}%"
+  preview-cost: "&7Repair Cost: &a${cost}"
+  preview-click: "&fKlik untuk memperbaiki"
+  
+  # Cost display lore
+  cost-display-name: "&6&lRepair Cost"
+  cost-display-lore:
+    - "&7Base Cost: &e${base}"
+    - "&7Multiplier: &ex{multiplier}"
+    - "&7Total: &a${total}"
+  
+  # Button messages
+  repair-button-name: "&a&lREPAIR ITEM"
+  repair-button-lore:
+    - ""
+    - "&7Click to repair the item"
+    - "&7in the preview slot."
+  
+  repair-all-button-name: "&e&lRepair All Inventory"
+  repair-all-button-lore:
+    - ""
+    - "&7Click to repair all"
+    - "&7damaged items in your"
+    - "&7inventory."
+    - ""
+    - "&eClick to repair all"
+  
+  close-button-name: "&c&lClose"
+  close-button-lore: "&7Close the GUI"
+  
+  # Error messages in GUI
+  gui-invalid-item: "&cInvalid item for repair!"
+  gui-preview-error: "&cError calculating preview!"
+
+# ═══════════════════════════════════════════════════════════════
+# ADMIN MESSAGES
+# ═══════════════════════════════════════════════════════════════
+
+admin:
+  # Update checker
+  update-available: "&aA new version is available! Current: &e{current}&a, Latest: &e{latest}"
+  download-link: "&7Download: &e{link}"
+  up-to-date: "&aYou are running the latest version!"
+  
+  # Debug mode
+  debug-enabled: "&aDebug mode enabled!"
+  debug-disabled: "&aDebug mode disabled!"
+  
+  # WorldGuard region messages
+  region-disabled: "&cRepair is disabled in this region!"
+  region-not-allowed: "&cYou can only repair in allowed regions!"
+
+# ═══════════════════════════════════════════════════════════════
+# ACTION BAR MESSAGES (Short, temporary messages)
+# ═══════════════════════════════════════════════════════════════
+
+action-bar:
+  repair-success: "&a✓ Item Repaired! Cost: &e${cost}"
+  repair-free: "&a✓ Item Repaired! &7(Free)"
+  insufficient-funds: "&c✗ Insufficient funds!"
+  not-damaged: "&c✗ Item not damaged!"
+  blacklisted: "&c✗ Cannot repair this item!"
+
+# ═══════════════════════════════════════════════════════════════
+# BOSS BAR MESSAGES (Optional, for bulk repair progress)
+# ═══════════════════════════════════════════════════════════════
+
+boss-bar:
+  bulk-repair-title: "&6Repairing Items..."
+  bulk-repair-progress: "&eProgress: &a{current}&7/&a{total} &7items"
+  bulk-repair-complete: "&a✓ Bulk repair complete!"

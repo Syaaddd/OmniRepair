@@ -1,0 +1,247 @@
+# ╔════════════════════════════════════════════════════════════════╗
+# #                    OmniRepair Configuration                     #
+# #     "Repair Vanilla & RPG Items Safely. MMOItems Supported."    #
+# ╚════════════════════════════════════════════════════════════════╝
+
+settings:
+  # Enable debug mode (shows detailed console messages)
+  debug: false
+  
+  # Use MMOItems API for custom durability detection if available
+  support-mmoitems: true
+  
+  # Use Vault Economy for repair costs
+  use-economy: true
+  
+  # Cost per 1% of durability lost (in currency)
+  cost-per-percent: 10.0
+  
+  # Maximum cost for a single repair operation
+  max-cost: 5000.0
+  
+  # Minimum cost (even for small repairs)
+  min-cost: 5.0
+  
+  # Allow repairing held item directly with /repair hand
+  repair-held-item: true
+  
+  # Allow bulk repair with /repair all
+  bulk-repair: true
+  
+  # Maximum items that can be repaired at once with Repair All
+  max-bulk-repair: 360
+  
+  # Repair items directly in inventory (no GUI)
+  instant-repair: false
+
+# ═══════════════════════════════════════════════════════════════
+# BLACKLIST - Items that cannot be repaired
+# ═══════════════════════════════════════════════════════════════
+
+blacklist:
+  # Materials that cannot be repaired
+  materials:
+    - BEDROCK
+    - BARRIER
+    - COMMAND_BLOCK
+    - STRUCTURE_BLOCK
+    - STRUCTURE_VOID
+    - END_PORTAL_FRAME
+    - ENCHANTED_GOLDEN_APPLE
+    - TOTEM_OF_UNDYING
+    - ELYTRA
+    - TRIDENT
+  
+  # Items with specific lore (case-insensitive)
+  lore-contains:
+    - "&lEVENT ITEM"
+    - "&cNO REPAIR"
+    - "Unrepairable"
+    - "[Event]"
+  
+  # Items with specific display name (case-insensitive)
+  name-contains:
+    - "Event Item"
+    - "Admin Item"
+  
+  # MMOItems IDs to blacklist (if MMOItems is enabled)
+  mmoitems-ids:
+    - "EXAMPLE_SWORD_EVENT"
+    - "EXAMPLE_ARMOR_BOSS"
+
+# ═══════════════════════════════════════════════════════════════
+# MMOITEMS INTEGRATION
+# ═══════════════════════════════════════════════════════════════
+
+mmoitems:
+  # Use MMOItems API for durability detection
+  enabled: true
+  
+  # Cost multiplier for MMOItems (1.5 = 50% more expensive)
+  custom-cost-multiplier: 1.5
+  
+  # Automatically update lore durability display after repair
+  sync-lore: true
+  
+  # Lore format for durability (placeholders: {current}, {max}, {percent})
+  lore-format:
+    enabled: true
+    line: "&7Durability: &a{current} &7/ &a{max} &7(&e{percent}%&7)"
+    position: "ADD_BOTTOM"  # ADD_BOTTOM, ADD_TOP, REPLACE_EXISTING
+  
+  # Existing lore lines to replace (if using REPLACE_EXISTING)
+  lore-patterns:
+    - ".*Durability:.*"
+    - ".*Durability.*"
+    - ".*HP:.*"
+
+# ═══════════════════════════════════════════════════════════════
+# ECONOMY SETTINGS
+# ═══════════════════════════════════════════════════════════════
+
+economy:
+  # Use Vault economy (requires Vault + economy plugin)
+  enabled: true
+  
+  # Alternative: Use item cost instead of money
+  use-item-cost: false
+  
+  # Item required for repair (if use-item-cost is true)
+  cost-item:
+    material: "IRON_INGOT"
+    amount-per-percent: 0.01  # Amount needed per 1% durability lost
+  
+  # Use XP levels instead of money
+  use-xp-cost: false
+  
+  # XP cost per 1% durability lost
+  xp-per-percent: 0.5
+  
+  # Free repair if player has permission
+  free-repair-permission: "omnirepair.free"
+
+# ═══════════════════════════════════════════════════════════════
+# SAFETY & PROTECTION
+# ═══════════════════════════════════════════════════════════════
+
+safety:
+  # Prevent repair of soulbound items (if using soulbound plugin)
+  respect-soulbound: true
+  
+  # Check for soulbound lore/flag
+  soulbound-lore:
+    - "Soulbound"
+    - "Soul Bound"
+    - "&9Soulbound"
+  
+  # Preserve all NBT data during repair (always true, but logged for clarity)
+  preserve-nbt: true
+  
+  # Cancel repair if cost exceeds player's balance
+  check-balance: true
+  
+  # Maximum durability that can be restored in one repair (0 = unlimited)
+  max-durability-restore: 0
+
+# ═══════════════════════════════════════════════════════════════
+# GUI SETTINGS
+# ═══════════════════════════════════════════════════════════════
+
+gui:
+  # GUI title (supports color codes)
+  title: "&8&l🔨 RPG Mender"
+  
+  # GUI size (must be multiple of 9, max 54)
+  size: 54
+  
+  # Background material
+  background: "BLACK_STAINED_GLASS_PANE"
+  
+  # Background display name
+  background-name: " "
+  
+  # Slot positions
+  slots:
+    input: 10      # Left slot - Place item here
+    preview: 16    # Center slot - Preview result
+    cost: 28       # Right slot - Cost display
+    repair-button: 31    # Repair button (center bottom)
+    repair-all-button: 29  # Repair All button (left bottom)
+    close-button: 33     # Close button (right bottom)
+  
+  # Button materials
+  buttons:
+    repair: "ANVIL"
+    repair-all: "HOPPER"
+    close: "BARRIER"
+    cost-display: "GOLD_BLOCK"
+  
+  # Button names (supports color codes)
+  button-names:
+    repair: "&a&lREPAIR ITEM"
+    repair-all: "&e&lRepair All Inventory"
+    close: "&c&lClose"
+  
+  # Preview lore format
+  preview-lore:
+    - ""
+    - "&7Current Durability: &c{current}"
+    - "&7Max Durability: &a{max}"
+    - "&7Damage: &e{damagePercent}%"
+    - ""
+    - "&7Repair Cost: &a${cost}"
+    - ""
+    - "&fKlik untuk memperbaiki"
+
+# ═══════════════════════════════════════════════════════════════
+# VISUAL EFFECTS
+# ═══════════════════════════════════════════════════════════════
+
+effects:
+  # Play sound on successful repair
+  sound:
+    enabled: true
+    type: "BLOCK_ANVIL_USE"
+    volume: 1.0
+    pitch: 1.0
+  
+  # Spawn particles on successful repair
+  particles:
+    enabled: true
+    type: "VILLAGER_HAPPY"
+    count: 10
+    offset-x: 0.5
+    offset-y: 0.5
+    offset-z: 0.5
+    speed: 0.5
+  
+  # Send action bar message on repair
+  action-bar:
+    enabled: true
+    message: "&a✓ Item Repaired! Cost: ${cost}"
+
+# ═══════════════════════════════════════════════════════════════
+# WORLDGUARD INTEGRATION
+# ═══════════════════════════════════════════════════════════════
+
+worldguard:
+  # Enable WorldGuard region checks
+  enabled: true
+  
+  # Regions where repair is disabled
+  disabled-regions:
+    - "repair-disabled-zone"
+    - "pvp-arena"
+  
+  # Allow repair only in specific regions (empty = all regions allowed)
+  allowed-regions: []
+
+# ═══════════════════════════════════════════════════════════════
+# UPDATE CHECKER
+# ═══════════════════════════════════════════════════════════════
+
+update-checker:
+  # Check for updates on startup
+  enabled: true
+  # Notify admins on join
+  notify-on-join: true

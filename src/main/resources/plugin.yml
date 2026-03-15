@@ -1,0 +1,37 @@
+name: OmniRepair
+version: '1.0.0-SNAPSHOT'
+main: com.github.Syaaddd.omniRepair.OmniRepair
+api-version: '1.21'
+authors: [Syaaddd]
+description: Repair Vanilla & RPG Items Safely. MMOItems Supported.
+website: https://github.com/Syaaddd/OmniRepair
+
+softdepend:
+  - MMOItems
+  - Vault
+  - WorldGuard
+
+commands:
+  repair:
+    description: Open the Repair GUI
+    usage: /<command> [hand|all]
+    aliases: [omnirepair, fix]
+    permission: omnirepair.use
+
+permissions:
+  omnirepair.use:
+    description: Allows player to use the repair GUI
+    default: true
+  omnirepair.bulk:
+    description: Allows player to use /repair all
+    default: false
+  omnirepair.hand:
+    description: Allows player to use /repair hand
+    default: true
+  omnirepair.admin:
+    description: Allows player to use admin commands
+    default: op
+    children:
+      omnirepair.use: true
+      omnirepair.bulk: true
+      omnirepair.hand: true
