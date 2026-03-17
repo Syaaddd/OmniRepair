@@ -72,6 +72,15 @@ public class GUIListener implements Listener {
             itemInHand = player.getInventory().getItemInOffHand();
         }
 
+        // Debug logging
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] Repair Hand clicked by " + player.getName());
+            plugin.getLogger().info("[DEBUG] Item in hand: " + (itemInHand != null ? itemInHand.getType().name() : "null"));
+            if (itemInHand != null) {
+                plugin.getLogger().info("[DEBUG] Item display name: " + (itemInHand.hasItemMeta() && itemInHand.getItemMeta().hasDisplayName() ? itemInHand.getItemMeta().getDisplayName() : "none"));
+            }
+        }
+
         // Check if player has an item
         if (itemInHand == null || itemInHand.getType().isAir()) {
             sendMessage(player, plugin.getMessages().getString("repair.not-damaged"));
@@ -80,14 +89,31 @@ public class GUIListener implements Listener {
         }
 
         // Check if item is damaged
-        if (!plugin.getItemUtils().isDamaged(itemInHand)) {
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] Checking if item is damaged...");
+        }
+        
+        boolean isDamaged = plugin.getItemUtils().isDamaged(itemInHand);
+        
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] isDamaged result: " + isDamaged);
+            plugin.getLogger().info("[DEBUG] Checking if item can be repaired...");
+        }
+
+        if (!isDamaged) {
             sendMessage(player, plugin.getMessages().getString("repair.not-damaged"));
             playErrorSound(player);
             return;
         }
 
         // Check if item can be repaired (not blacklisted, not soulbound)
-        if (!plugin.getItemUtils().canRepair(itemInHand)) {
+        boolean canRepair = plugin.getItemUtils().canRepair(itemInHand);
+        
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] canRepair result: " + canRepair);
+        }
+
+        if (!canRepair) {
             sendMessage(player, plugin.getMessages().getString("repair.blacklisted"));
             playErrorSound(player);
             return;
@@ -95,6 +121,10 @@ public class GUIListener implements Listener {
 
         // Calculate repair cost
         double cost = calculateRepairCost(itemInHand);
+
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] Repair cost: " + cost);
+        }
 
         // Check if player can afford
         if (!plugin.getEconomyHandler().canAfford(player, cost)) {
@@ -108,10 +138,20 @@ public class GUIListener implements Listener {
         // Perform repair based on item type
         ItemStack repairedItem;
 
-        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled() 
+        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()
                 && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
+            
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] Using MMOItems repair");
+            }
+            
             repairedItem = plugin.getMmoItemsRepair().repair(itemInHand, player);
         } else {
+            
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] Using Vanilla repair");
+            }
+            
             repairedItem = plugin.getVanillaRepair().repair(itemInHand, player);
         }
 
@@ -130,7 +170,7 @@ public class GUIListener implements Listener {
 
         // Success!
         player.getInventory().setItemInMainHand(repairedItem);
-        
+
         // Play success effects
         playSuccessEffects(player, cost);
 
