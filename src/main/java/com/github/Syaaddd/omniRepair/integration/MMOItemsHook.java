@@ -483,7 +483,7 @@ public class MMOItemsHook {
                                     }
                                 } catch (Exception e) {
                                     if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                        plugin.getLogger().info("[DEBUG] Method 3 - hasData method failed: " + e.getMessage());
+                                        plugin.getLogger().info("[DEBUG] Method 3 - hasData method not found, trying alternative approaches");
                                     }
                                 }
                                 
@@ -495,12 +495,29 @@ public class MMOItemsHook {
                                         if (plugin.getConfig().getBoolean("settings.debug", false)) {
                                             plugin.getLogger().info("[DEBUG] Method 3 - getStats() result class: " + (stats != null ? stats.getClass().getName() : "null"));
                                         }
-                                        if (stats instanceof org.bukkit.configuration.ConfigurationSection) {
+                                        
+                                        // Handle different return types
+                                        if (stats instanceof java.util.Set) {
+                                            // getStats() returns Set<String> of stat IDs
+                                            java.util.Set<String> statIds = (java.util.Set<String>) stats;
+                                            hasDurability = statIds.contains("DURABILITY");
+                                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                                plugin.getLogger().info("[DEBUG] Method 3 - Stats Set contains DURABILITY: " + hasDurability);
+                                                plugin.getLogger().info("[DEBUG] Method 3 - All stat IDs: " + String.join(", ", statIds));
+                                            }
+                                        } else if (stats instanceof org.bukkit.configuration.ConfigurationSection) {
+                                            // Alternative: returns ConfigurationSection
                                             org.bukkit.configuration.ConfigurationSection statsSection = (org.bukkit.configuration.ConfigurationSection) stats;
                                             hasDurability = statsSection.contains("DURABILITY");
                                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                                plugin.getLogger().info("[DEBUG] Method 3 - Stats contains DURABILITY: " + hasDurability);
-                                                plugin.getLogger().info("[DEBUG] Method 3 - All stats keys: " + String.join(", ", statsSection.getKeys(false)));
+                                                plugin.getLogger().info("[DEBUG] Method 3 - Stats Section contains DURABILITY: " + hasDurability);
+                                            }
+                                        } else if (stats instanceof java.util.Map) {
+                                            // Alternative: returns Map<String, Object>
+                                            java.util.Map<?, ?> statsMap = (java.util.Map<?, ?>) stats;
+                                            hasDurability = statsMap.containsKey("DURABILITY");
+                                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                                plugin.getLogger().info("[DEBUG] Method 3 - Stats Map contains DURABILITY: " + hasDurability);
                                             }
                                         }
                                     } catch (Exception e2) {
@@ -510,24 +527,22 @@ public class MMOItemsHook {
                                     }
                                 }
                                 
-                                // Method C: Try getData() and check for DURABILITY
+                                // Method C: Try getStat(String) method
                                 if (!hasDurability) {
                                     try {
-                                        Method getDataMethod = mmoItem.getClass().getMethod("getData");
-                                        Object data = getDataMethod.invoke(mmoItem);
-                                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                            plugin.getLogger().info("[DEBUG] Method 3 - getData() result class: " + (data != null ? data.getClass().getName() : "null"));
-                                        }
-                                        if (data instanceof org.bukkit.configuration.ConfigurationSection) {
-                                            org.bukkit.configuration.ConfigurationSection dataSection = (org.bukkit.configuration.ConfigurationSection) data;
-                                            hasDurability = dataSection.contains("DURABILITY");
-                                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                                plugin.getLogger().info("[DEBUG] Method 3 - Data contains DURABILITY: " + hasDurability);
+                                        Method getStatMethod = mmoItem.getClass().getMethod("getStat", String.class);
+                                        if (getStatMethod != null) {
+                                            Object stat = getStatMethod.invoke(mmoItem, "DURABILITY");
+                                            if (stat != null) {
+                                                hasDurability = true;
+                                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                                    plugin.getLogger().info("[DEBUG] Method 3 - getStat(DURABILITY) returned: " + stat);
+                                                }
                                             }
                                         }
                                     } catch (Exception e3) {
                                         if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                            plugin.getLogger().info("[DEBUG] Method 3 - getData method failed: " + e3.getMessage());
+                                            plugin.getLogger().info("[DEBUG] Method 3 - getStat method not available");
                                         }
                                     }
                                 }
