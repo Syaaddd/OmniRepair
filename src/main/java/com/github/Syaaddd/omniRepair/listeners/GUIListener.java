@@ -11,6 +11,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 /**
  * Handles all GUI-related events.
@@ -93,14 +94,14 @@ public class GUIListener implements Listener {
             plugin.getLogger().info("[DEBUG] Checking if item is damaged...");
         }
         
-        // For MMOItems, use simpler check - just check if it has durability stat
+        // For MMOItems, just check if it's a valid MMOItem (has durability stat or not)
         boolean isDamaged;
         if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled() 
                 && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
-            // MMOItems item - check if it has durability stat
+            // MMOItems item - if it's valid MMOItem, allow repair
             isDamaged = hasDurabilityStat(itemInHand);
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] MMOItem durability stat check: " + isDamaged);
+                plugin.getLogger().info("[DEBUG] MMOItem validity check: " + isDamaged);
             }
         } else {
             // Vanilla item - use normal damage check
@@ -406,6 +407,9 @@ public class GUIListener implements Listener {
 
             // Simple approach: if it's a valid MMOItem, allow repair
             // The repair will give them a fresh template with full durability
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] hasDurabilityStat: Valid MMOItem, allowing repair");
+            }
             return true;
 
         } catch (Exception e) {

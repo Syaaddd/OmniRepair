@@ -38,23 +38,31 @@ public class MMOItemsRepair extends RepairHandler {
             return false;
         }
 
-        // Check if it's an MMOItem
-        Type type = MMOItems.getType(item);
-        if (type == null) {
-            return false;
-        }
-
-        // Check if it's damaged using simple durability check
-        if (!isItemDamaged(item)) {
+        // Check if it's an MMOItem using MMOItems API directly
+        net.Indyuce.mmoitems.api.Type type = net.Indyuce.mmoitems.MMOItems.getType(item);
+        String id = net.Indyuce.mmoitems.MMOItems.getID(item);
+        
+        if (type == null || id == null) {
             return false;
         }
 
         // Check blacklist
-        String mmoId = MMOItems.getID(item);
-        if (mmoId != null && plugin.getMmoItemsHook().isBlacklisted(mmoId)) {
+        if (plugin.getMmoItemsHook().isBlacklisted(id)) {
             return false;
         }
 
+        // Check if item can be obtained from MMOItems (valid item)
+        try {
+            ItemStack template = net.Indyuce.mmoitems.MMOItems.plugin.getItem(type, id);
+            if (template == null) {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+
+        // It's a valid MMOItem - allow repair
+        // We don't check damage because some MMOItems don't use standard durability
         return true;
     }
 
