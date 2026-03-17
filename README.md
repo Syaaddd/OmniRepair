@@ -143,32 +143,52 @@ mmoitems:
 
 ### Basic Commands
 
+#### Player Commands
 ```bash
-/repair          # Open repair GUI
-/repair hand     # Repair item in hand instantly
-/repair all      # Repair all items in inventory
+/repair          # Open repair GUI for yourself
 /repair help     # Show help message
 ```
 
-### GUI Workflow (Simplified)
+#### Console/Admin Commands
+```bash
+/repair <player>    # Open repair GUI for a specific player
+/repair reload      # Reload configuration (Admin)
+/repair debug       # Toggle debug mode (Admin)
+/repair help        # Show help message
+```
+
+**Note:** Repair is **GUI-only**. Direct repair commands (`/repair hand`, `/repair all`) have been removed.
+
+### GUI Workflow
 
 ```
-Step 1 → /repair to open GUI
-Step 2 → Click "Repair Hand" button to repair item in hand
+Step 1 → Admin/Console runs: /repair <player>
          OR
-         Click "Repair All" button to repair all items in inventory
+         Player runs: /repair
+
+Step 2 → Player clicks "Repair Hand" button to repair item in hand
+         OR
+         Player clicks "Repair All" button to repair all items in inventory
+
 Step 3 → Done! Item is repaired with sound & particle effects
 ```
 
-**Changes from Previous Versions:**
+### Console Command Examples
 
-| Old Version | New Version |
-|-------------|-------------|
-| 54 slots (6 rows) | 27 slots (3 rows) |
-| Input slot + Preview slot | Direct repair |
-| Separate cost display | Cost shown in chat |
-| 6+ buttons | Only 3 buttons |
-| Multi-step process | One-click repair |
+```bash
+# Open repair GUI for a player named "Steve"
+/repair Steve
+
+# Open repair GUI for a player named "Alex"
+/repair Alex
+```
+
+### Permission Required
+
+| Permission | Description | Default |
+|------------|-------------|---------|
+| `omnirepair.use` | Open repair GUI (for players) | `true` |
+| `omnirepair.admin` | Use admin commands (reload, debug, target players) | `op` |
 
 ---
 
@@ -322,7 +342,7 @@ gui:
       - "&7damaged items in your"
       - "&7inventory."
       - ""
-      - "&eRequires permission: omnirepair.bulk"
+      - "&eCost: Based on total damage"
 
     close: "&c&lClose"
     close-lore:
@@ -390,11 +410,11 @@ Row 3:  [18][19][20][21][22][23][24][25][26]
 
 ### Button Functions
 
-| Button | Permission | Description |
-|--------|------------|-------------|
-| **Repair Hand** | `omnirepair.hand` | Repair held item instantly |
-| **Repair All** | `omnirepair.bulk` | Repair all damaged items in inventory |
-| **Close** | None | Close GUI with sound effect |
+| Button | Description |
+|--------|-------------|
+| **Repair Hand** | Repair held item instantly |
+| **Repair All** | Repair all damaged items in inventory |
+| **Close** | Close GUI with sound effect |
 
 ---
 
@@ -467,9 +487,7 @@ Calculation   : 80 × $10 × 1.5 = $1,200.00
 | Permission | Description | Default |
 |------------|-------------|---------|
 | `omnirepair.use` | Open repair GUI | `true` (all players) |
-| `omnirepair.hand` | Use `/repair hand` | `true` (all players) |
-| `omnirepair.bulk` | Use `/repair all` | `false` (OP only) |
-| `omnirepair.admin` | Admin commands (`reload`, `debug`) | `op` |
+| `omnirepair.admin` | Admin commands (`reload`, `debug`, target players) | `op` |
 | `omnirepair.free` | Free repair (bypass all costs) | `false` |
 
 ### Permission Setup Examples
@@ -478,9 +496,8 @@ Calculation   : 80 × $10 × 1.5 = $1,200.00
 
 ```yaml
 permissions:
-  omnirepair.use: true
-  omnirepair.hand: true
-  omnirepair.bulk: false    # Only OP can bulk repair
+  omnirepair.use: true      # All players can use repair GUI
+  omnirepair.admin: false   # Only OP can use admin commands
 ```
 
 **RPG Server (with VIP):**
@@ -490,13 +507,10 @@ groups:
   vip:
     permissions:
       - omnirepair.use
-      - omnirepair.hand
-      - omnirepair.bulk
       - omnirepair.free     # VIP gets free repair!
   default:
     permissions:
       - omnirepair.use
-      - omnirepair.hand
 ```
 
 ---
@@ -508,16 +522,16 @@ groups:
 | Command | Description | Permission |
 |---------|-------------|------------|
 | `/repair` | Open repair GUI | `omnirepair.use` |
-| `/repair hand` | Repair held item | `omnirepair.hand` |
-| `/repair all` | Repair all inventory items | `omnirepair.bulk` |
 | `/repair help` | Show help message | `omnirepair.use` |
 
-### Admin Commands
+### Console/Admin Commands
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/repair reload` | Reload all configuration files | `omnirepair.admin` |
+| `/repair <player>` | Open repair GUI for a player | `omnirepair.admin` |
+| `/repair reload` | Reload configuration files | `omnirepair.admin` |
 | `/repair debug` | Toggle debug mode | `omnirepair.admin` |
+| `/repair help` | Show help message | `omnirepair.use` |
 
 ### Aliases
 

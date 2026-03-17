@@ -6,33 +6,24 @@
 settings:
   # Enable debug mode (shows detailed console messages)
   debug: false
-  
+
   # Use MMOItems API for custom durability detection if available
   support-mmoitems: true
-  
+
   # Use Vault Economy for repair costs
   use-economy: true
-  
+
   # Cost per 1% of durability lost (in currency)
   cost-per-percent: 10.0
-  
+
   # Maximum cost for a single repair operation
   max-cost: 5000.0
-  
+
   # Minimum cost (even for small repairs)
   min-cost: 5.0
-  
-  # Allow repairing held item directly with /repair hand
-  repair-held-item: true
-  
-  # Allow bulk repair with /repair all
-  bulk-repair: true
-  
-  # Maximum items that can be repaired at once with Repair All
+
+  # Maximum items that can be repaired at once with Repair All button
   max-bulk-repair: 360
-  
-  # Repair items directly in inventory (no GUI)
-  instant-repair: false
 
 # ═══════════════════════════════════════════════════════════════
 # BLACKLIST - Items that cannot be repaired

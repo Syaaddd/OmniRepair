@@ -10,12 +10,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * Main command handler for /repair command.
- * Supports subcommands: GUI, hand, all, reload, help.
+ * 
+ * Usage:
+ * - Players: /repair (opens GUI for themselves)
+ * - Console/Admin: /repair <player> (opens GUI for specified player)
+ * - Admin: /repair reload, /repair debug, /repair help
+ * 
+ * Note: Repair is GUI-only. Direct repair commands (hand, all) are removed.
  */
 public class RepairCommand implements CommandExecutor, TabCompleter {
 
@@ -26,42 +31,47 @@ public class RepairCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, 
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
                              @NotNull String label, @NotNull String[] args) {
-        
-        // Check if player is using player-only commands
-        if (!(sender instanceof Player player)) {
-            if (args.length == 0) {
-                sendMessage(sender, plugin.getMessages().getString("general.player-only"));
-                return true;
-            }
-        }
 
         if (args.length == 0) {
-            // Open GUI
+            // No arguments: open GUI for sender (must be player)
             handleGUI(sender);
             return true;
         }
 
         String subCommand = args[0].toLowerCase();
 
-        switch (subCommand) {
-            case "hand" -> handleHand(sender);
-            case "all" -> handleAll(sender);
-            case "reload" -> handleReload(sender);
-            case "help" -> handleHelp(sender);
-            case "debug" -> handleDebug(sender);
-            default -> {
-                sendMessage(sender, plugin.getMessages().getString("general.unknown-command"));
-                handleHelp(sender);
-            }
+        // Check for admin commands
+        if (subCommand.equals("reload")) {
+            handleReload(sender);
+            return true;
         }
 
+        if (subCommand.equals("debug")) {
+            handleDebug(sender);
+            return true;
+        }
+
+        if (subCommand.equals("help")) {
+            handleHelp(sender);
+            return true;
+        }
+
+        // If sender is console or admin with permission, treat first arg as player name
+        if (!(sender instanceof Player) || sender.hasPermission("omnirepair.admin")) {
+            handleOpenGUIForPlayer(sender, args[0]);
+            return true;
+        }
+
+        // Player trying to use unknown subcommand
+        sendMessage(sender, plugin.getMessages().getString("general.unknown-command"));
+        handleHelp(sender);
         return true;
     }
 
     /**
-     * Handle opening the repair GUI.
+     * Handle opening the repair GUI for the sender (must be a player).
      */
     private void handleGUI(CommandSender sender) {
         if (!(sender instanceof Player player)) {
@@ -78,54 +88,49 @@ public class RepairCommand implements CommandExecutor, TabCompleter {
     }
 
     /**
-     * Handle repairing held item.
+     * Handle opening the repair GUI for a specified player.
+     * Can be used by console or admins.
      */
-    private void handleHand(CommandSender sender) {
-        if (!(sender instanceof Player player)) {
-            sendMessage(sender, plugin.getMessages().getString("general.player-only"));
+    private void handleOpenGUIForPlayer(CommandSender sender, String targetName) {
+        if (targetName == null || targetName.isEmpty()) {
+            sendMessage(sender, plugin.getMessages().getString("general.no-player-specified"));
             return;
         }
 
-        if (!player.hasPermission("omnirepair.hand")) {
-            sendMessage(sender, plugin.getMessages().getString("general.no-permission"));
+        Player target = plugin.getServer().getPlayer(targetName);
+        if (target == null) {
+            sendMessage(sender, plugin.getMessages().getString("general.player-not-found")
+                    .replace("{player}", targetName));
             return;
         }
 
-        if (!plugin.getConfig().getBoolean("settings.repair-held-item", true)) {
-            sendMessage(sender, "&cInstant hand repair is disabled on this server.");
+        if (!target.hasPermission("omnirepair.use")) {
+            sendMessage(sender, plugin.getMessages().getString("general.target-no-permission")
+                    .replace("{player}", target.getName()));
             return;
         }
 
-        boolean success = plugin.getRepairListener().repairHeldItem(player);
-        if (!success) {
-            // Error message already sent by repairHeldItem
+        plugin.getGuiManager().openGUI(target);
+
+        // Notify sender
+        if (sender instanceof Player) {
+            sendMessage(sender, plugin.getMessages().getString("general.gui-opened-other")
+                    .replace("{player}", target.getName()));
+        } else {
+            plugin.getLogger().info("Opened repair GUI for " + target.getName());
+        }
+
+        // Notify target player
+        if (!target.equals(sender)) {
+            target.sendMessage(plugin.getLoreUpdater().colorize(
+                    plugin.getMessages().getString("prefix", "&8[&6OmniRepair&8] ") +
+                    plugin.getMessages().getString("general.gui-opened-for-you")
+            ));
         }
     }
 
     /**
-     * Handle bulk repair.
-     */
-    private void handleAll(CommandSender sender) {
-        if (!(sender instanceof Player player)) {
-            sendMessage(sender, plugin.getMessages().getString("general.player-only"));
-            return;
-        }
-
-        if (!player.hasPermission("omnirepair.bulk")) {
-            sendMessage(sender, plugin.getMessages().getString("general.no-permission"));
-            return;
-        }
-
-        if (!plugin.getConfig().getBoolean("settings.bulk-repair", true)) {
-            sendMessage(sender, "&cBulk repair is disabled on this server.");
-            return;
-        }
-
-        plugin.getRepairListener().performBulkRepair(player);
-    }
-
-    /**
-     * Handle config reload.
+     * Handle config reload (admin only).
      */
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("omnirepair.admin")) {
@@ -148,20 +153,17 @@ public class RepairCommand implements CommandExecutor, TabCompleter {
      */
     private void handleHelp(CommandSender sender) {
         sendMessage(sender, plugin.getMessages().getString("general.help-header"));
-        sendMessage(sender, plugin.getMessages().getString("general.help-line"));
-        
-        if (sender.hasPermission("omnirepair.hand")) {
-            sendMessage(sender, plugin.getMessages().getString("general.help-line-hand"));
+
+        if (sender instanceof Player) {
+            sendMessage(sender, plugin.getMessages().getString("general.help-line-gui"));
         }
-        
-        if (sender.hasPermission("omnirepair.bulk")) {
-            sendMessage(sender, plugin.getMessages().getString("general.help-line-all"));
-        }
-        
+
         if (sender.hasPermission("omnirepair.admin")) {
+            sendMessage(sender, plugin.getMessages().getString("general.help-line-target"));
             sendMessage(sender, plugin.getMessages().getString("general.help-line-reload"));
+            sendMessage(sender, plugin.getMessages().getString("general.help-line-debug"));
         }
-        
+
         sendMessage(sender, plugin.getMessages().getString("general.help-footer"));
     }
 
@@ -190,24 +192,24 @@ public class RepairCommand implements CommandExecutor, TabCompleter {
                                                  @NotNull String label, @NotNull String[] args) {
         if (args.length == 1) {
             List<String> completions = new ArrayList<>();
-            
+
             // Always show help
             completions.add("help");
-            
-            if (sender instanceof Player) {
-                if (sender.hasPermission("omnirepair.hand")) {
-                    completions.add("hand");
-                }
-                if (sender.hasPermission("omnirepair.bulk")) {
-                    completions.add("all");
-                }
-            }
-            
+
             if (sender.hasPermission("omnirepair.admin")) {
                 completions.add("reload");
                 completions.add("debug");
             }
-            
+
+            // If admin or console, also show player names
+            if (!(sender instanceof Player) || sender.hasPermission("omnirepair.admin")) {
+                for (Player player : plugin.getServer().getOnlinePlayers()) {
+                    if (player.hasPermission("omnirepair.use")) {
+                        completions.add(player.getName());
+                    }
+                }
+            }
+
             String input = args[0].toLowerCase();
             List<String> filtered = new ArrayList<>();
             for (String completion : completions) {
@@ -215,10 +217,10 @@ public class RepairCommand implements CommandExecutor, TabCompleter {
                     filtered.add(completion);
                 }
             }
-            
+
             return filtered;
         }
-        
+
         return null;
     }
 
@@ -232,12 +234,5 @@ public class RepairCommand implements CommandExecutor, TabCompleter {
 
         String prefix = plugin.getMessages().getString("prefix", "&8[&6OmniRepair&8] ");
         sender.sendMessage(plugin.getLoreUpdater().colorize(prefix + message));
-    }
-
-    /**
-     * Colorize a string.
-     */
-    private String colorize(String text) {
-        return plugin.getLoreUpdater().colorize(text);
     }
 }
