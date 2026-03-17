@@ -489,6 +489,30 @@ public class MMOItemsHook {
                         if (mmoItem != null) {
                             // Check if has durability stat using ItemStats.DURABILITY constant
                             boolean hasDurability = false;
+                            
+                            // Log all available stats for debugging
+                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                try {
+                                    Method getStatsMethod = mmoItem.getClass().getMethod("getStats");
+                                    Object stats = getStatsMethod.invoke(mmoItem);
+                                    if (stats instanceof java.util.Set) {
+                                        java.util.Set<String> statIds = (java.util.Set<String>) stats;
+                                        plugin.getLogger().info("[DEBUG] Method 4 - All available stats: " + String.join(", ", statIds));
+                                        
+                                        // Check for various durability-related stat names
+                                        for (String statId : statIds) {
+                                            if (statId.toLowerCase().contains("durability") || 
+                                                statId.toLowerCase().contains("hp") || 
+                                                statId.toLowerCase().contains("health")) {
+                                                plugin.getLogger().info("[DEBUG] Method 4 - Found durability-like stat: " + statId);
+                                            }
+                                        }
+                                    }
+                                } catch (Exception ex) {
+                                    plugin.getLogger().info("[DEBUG] Method 4 - Could not get stats list: " + ex.getMessage());
+                                }
+                            }
+                            
                             try {
                                 hasDurability = mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY);
                                 if (plugin.getConfig().getBoolean("settings.debug", false)) {
