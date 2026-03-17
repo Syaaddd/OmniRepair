@@ -44,8 +44,9 @@
 |---------|---------------------|
 | Vanilla anvil removes enchants | ✅ 100% NBT preservation |
 | MMOItems not detected as damaged | ✅ MMOItems API integration |
-| Manual repair is time-consuming | ✅ Bulk repair & interactive GUI |
+| Manual repair is time-consuming | ✅ Interactive GUI with bulk repair |
 | Unbalanced repair costs | ✅ Configurable economy system |
+| Complex repair systems | ✅ Simple GUI-only interface |
 
 ---
 
@@ -76,6 +77,7 @@
 - **Repair All** — Repair all damaged items in inventory
 - **Close** — Close GUI with sound effect
 - **Simple & Fast** — Only 3 buttons, no confusing input/preview slots
+- **GUI-Only System** — All repairs must be done through the GUI interface
 
 ### 💰 Economy & Cost System
 
@@ -157,20 +159,20 @@ mmoitems:
 /repair help        # Show help message
 ```
 
-**Note:** Repair is **GUI-only**. Direct repair commands (`/repair hand`, `/repair all`) have been removed.
+> **Note:** Repair is **GUI-only**. Direct repair commands (`/repair hand`, `/repair all`) have been removed.
 
 ### GUI Workflow
 
 ```
-Step 1 → Admin/Console runs: /repair <player>
-         OR
-         Player runs: /repair
-
-Step 2 → Player clicks "Repair Hand" button to repair item in hand
-         OR
-         Player clicks "Repair All" button to repair all items in inventory
-
-Step 3 → Done! Item is repaired with sound & particle effects
+┌──────────────────────────────────────────────────────────┐
+│ Step 1: Admin/Console runs: /repair <player>             │
+│            OR                                            │
+│            Player runs: /repair                          │
+├──────────────────────────────────────────────────────────┤
+│ Step 2: Player clicks "Repair Hand" or "Repair All"      │
+├──────────────────────────────────────────────────────────┤
+│ Step 3: Item repaired with sound & particle effects!     │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ### Console Command Examples
@@ -181,6 +183,28 @@ Step 3 → Done! Item is repaired with sound & particle effects
 
 # Open repair GUI for a player named "Alex"
 /repair Alex
+
+# From server console:
+console> repair Steve
+console> repair Alex
+```
+
+### Use Cases
+
+#### For Server Admins
+```bash
+# Help a player who needs repair
+/repair PlayerName
+
+# Open GUI for multiple players (one at a time)
+/repair Player1
+/repair Player2
+```
+
+#### For Players
+```bash
+# Open your own repair GUI
+/repair
 ```
 
 ### Permission Required
@@ -189,6 +213,7 @@ Step 3 → Done! Item is repaired with sound & particle effects
 |------------|-------------|---------|
 | `omnirepair.use` | Open repair GUI (for players) | `true` |
 | `omnirepair.admin` | Use admin commands (reload, debug, target players) | `op` |
+| `omnirepair.free` | Free repair (bypass all costs) | `false` |
 
 ---
 
@@ -207,10 +232,8 @@ settings:
   max-cost: 5000.0            # Maximum repair cost
   min-cost: 5.0               # Minimum repair cost
 
-  # Feature toggles
-  repair-held-item: true      # Allow /repair hand
-  bulk-repair: true           # Allow /repair all
-  max-bulk-repair: 360        # Max items in bulk repair
+  # GUI configuration
+  max-bulk-repair: 360        # Max items in bulk repair (Repair All button)
 ```
 
 ### 2. Blacklist Configuration
@@ -519,19 +542,45 @@ groups:
 
 ### Player Commands
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/repair` | Open repair GUI | `omnirepair.use` |
-| `/repair help` | Show help message | `omnirepair.use` |
+| Command | Description | Permission | Usage Example |
+|---------|-------------|------------|---------------|
+| `/repair` | Open repair GUI for yourself | `omnirepair.use` | `/repair` |
+| `/repair help` | Show help message | `omnirepair.use` | `/repair help` |
 
 ### Console/Admin Commands
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/repair <player>` | Open repair GUI for a player | `omnirepair.admin` |
-| `/repair reload` | Reload configuration files | `omnirepair.admin` |
-| `/repair debug` | Toggle debug mode | `omnirepair.admin` |
-| `/repair help` | Show help message | `omnirepair.use` |
+| Command | Description | Permission | Usage Example |
+|---------|-------------|------------|---------------|
+| `/repair <player>` | Open repair GUI for a player | `omnirepair.admin` | `/repair Steve` |
+| `/repair reload` | Reload configuration files | `omnirepair.admin` | `/repair reload` |
+| `/repair debug` | Toggle debug mode | `omnirepair.admin` | `/repair debug` |
+| `/repair help` | Show help message | `omnirepair.use` | `/repair help` |
+
+### Command Examples
+
+#### Player Usage
+```bash
+# Open your own repair GUI
+/repair
+```
+
+#### Admin Usage
+```bash
+# Open repair GUI for a specific player
+/repair Steve
+
+# Reload configuration
+/repair reload
+
+# Toggle debug mode
+/repair debug
+```
+
+#### Console Usage
+```bash
+# Open repair GUI for a player (from server console)
+repair Steve
+```
 
 ### Aliases
 
