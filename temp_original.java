@@ -452,116 +452,47 @@ public class MMOItemsHook {
 
             // Method 4: Check if item has MMOItems ID and durability stat
             String id = net.Indyuce.mmoitems.MMOItems.getID(item);
-            if (id != null && !id.isEmpty()) {
+            if (id != null) {
                 net.Indyuce.mmoitems.api.Type type = net.Indyuce.mmoitems.MMOItems.getType(item);
                 if (type != null) {
                     if (plugin.getConfig().getBoolean("settings.debug", false)) {
                         plugin.getLogger().info("[DEBUG] Method 4 (MMOItem Stats) - ID: " + id + ", Type: " + type.getId());
                     }
-
+                    
                     try {
-                        // Try different API methods to get MMOItem
-                        net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem = null;
+                        net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem =
+                                net.Indyuce.mmoitems.MMOItems.plugin.getItems().getMMOItem(type, id);
                         
-                        // Try method 1: MMOItems.plugin.getItems().getMMOItem(type, id)
-                        try {
-                            mmoItem = net.Indyuce.mmoitems.MMOItems.plugin.getItems().getMMOItem(type, id);
-                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                plugin.getLogger().info("[DEBUG] Method 4 - Got MMOItem via getItems().getMMOItem(): " + (mmoItem != null ? "success" : "null"));
-                            }
-                        } catch (Exception e1) {
-                            // Try method 2: MMOItems.plugin.getMMOItem(type, id)
-                            try {
-                                Method getMMOItemMethod = net.Indyuce.mmoitems.MMOItems.plugin.getClass().getMethod("getMMOItem", net.Indyuce.mmoitems.api.Type.class, String.class);
-                                if (getMMOItemMethod != null) {
-                                    mmoItem = (net.Indyuce.mmoitems.api.item.mmoitem.MMOItem) getMMOItemMethod.invoke(net.Indyuce.mmoitems.MMOItems.plugin, type, id);
-                                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                        plugin.getLogger().info("[DEBUG] Method 4 - Got MMOItem via getMMOItem(): " + (mmoItem != null ? "success" : "null"));
-                                    }
-                                }
-                            } catch (Exception e2) {
-                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                    plugin.getLogger().info("[DEBUG] Method 4 - Failed to get MMOItem object: " + e2.getMessage());
-                                }
-                            }
+                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                            plugin.getLogger().info("[DEBUG] Method 4 - MMOItem object: " + (mmoItem != null ? "found" : "null"));
                         }
-
-                        if (mmoItem != null) {
-                            // Check if has durability stat using ItemStats.DURABILITY constant
-                            boolean hasDurability = false;
-                            try {
-                                hasDurability = mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY);
-                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                    plugin.getLogger().info("[DEBUG] Method 4 - hasData(ItemStats.DURABILITY): " + hasDurability);
-                                }
-                            } catch (Exception e) {
-                                // Fallback: try with string "DURABILITY"
-                                try {
-                                    Method hasDataMethod = mmoItem.getClass().getMethod("hasData", String.class);
-                                    if (hasDataMethod != null) {
-                                        Object result = hasDataMethod.invoke(mmoItem, "DURABILITY");
-                                        if (result instanceof Boolean) {
-                                            hasDurability = (Boolean) result;
-                                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                                plugin.getLogger().info("[DEBUG] Method 4 - hasData(\"DURABILITY\"): " + hasDurability);
-                                            }
-                                        }
-                                    }
-                                } catch (Exception e2) {
-                                    // Also try checking stats Set
-                                    try {
-                                        Method getStatsMethod = mmoItem.getClass().getMethod("getStats");
-                                        Object stats = getStatsMethod.invoke(mmoItem);
-                                        if (stats instanceof java.util.Set) {
-                                            java.util.Set<String> statIds = (java.util.Set<String>) stats;
-                                            hasDurability = statIds.contains("DURABILITY");
-                                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                                plugin.getLogger().info("[DEBUG] Method 4 - Stats Set contains DURABILITY: " + hasDurability);
-                                            }
-                                        }
-                                    } catch (Exception e3) {
-                                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                            plugin.getLogger().info("[DEBUG] Method 4 - All durability check methods failed");
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (hasDurability) {
-                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                    plugin.getLogger().info("[DEBUG] Method 4 - Has DURABILITY stat");
-                                }
-
-                                // Template punya durability - durability runtime ada di NBT
-                                double currentHp = readDurabilityFromNBT(item);
-                                double maxHp = readMaxDurabilityFromNBT(item);
-
-                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                    plugin.getLogger().info("[DEBUG] Method 4 - NBT HP: " + currentHp + " / " + maxHp);
-                                }
-
-                                if (currentHp >= 0 && maxHp > 0) {
-                                    boolean damaged = currentHp < maxHp;
-                                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                        plugin.getLogger().info("[DEBUG] Method 4 Result: " + damaged);
-                                    }
-                                    return damaged;
-                                }
-
-                                // Has durability stat but cannot read NBT - assume damaged
-                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                    plugin.getLogger().info("[DEBUG] Method 4 Result: Has durability stat, assuming damaged");
-                                }
-                                return true;
-                            } else {
-                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                    plugin.getLogger().info("[DEBUG] Method 4 - No DURABILITY stat on this item");
-                                }
-                            }
-                        } else {
+                        
+                        if (mmoItem != null && mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY)) {
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                plugin.getLogger().info("[DEBUG] Method 4 - MMOItem object is null");
+                                plugin.getLogger().info("[DEBUG] Method 4 - Has DURABILITY stat");
                             }
+                            
+                            // Template punya durability - durability runtime ada di NBT
+                            double currentHp = readDurabilityFromNBT(item);
+                            double maxHp = readMaxDurabilityFromNBT(item);
+                            
+                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                plugin.getLogger().info("[DEBUG] Method 4 - NBT HP: " + currentHp + " / " + maxHp);
+                            }
+                            
+                            if (currentHp >= 0 && maxHp > 0) {
+                                boolean damaged = currentHp < maxHp;
+                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                    plugin.getLogger().info("[DEBUG] Method 4 Result: " + damaged);
+                                }
+                                return damaged;
+                            }
+
+                            // Has durability stat but cannot read NBT - assume damaged
+                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                plugin.getLogger().info("[DEBUG] Method 4 Result: Has durability stat, assuming damaged");
+                            }
+                            return true;
                         }
                     } catch (Exception e) {
                         if (plugin.getConfig().getBoolean("settings.debug", false)) {
