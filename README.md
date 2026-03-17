@@ -40,12 +40,12 @@
 
 ### Why Choose OmniRepair?
 
-| Problem | Solusi OmniRepair |
-|---------|-------------------|
-| Anvil vanilla menghapus enchant | ✅ 100% NBT preservation |
-| Item MMOItems tidak terdeteksi rusak | ✅ MMOItems API integration |
-| Repair manual memakan waktu | ✅ Bulk repair & GUI interaktif |
-| Biaya repair tidak seimbang | ✅ Configurable economy system |
+| Problem | OmniRepair Solution |
+|---------|---------------------|
+| Vanilla anvil removes enchants | ✅ 100% NBT preservation |
+| MMOItems not detected as damaged | ✅ MMOItems API integration |
+| Manual repair is time-consuming | ✅ Bulk repair & interactive GUI |
+| Unbalanced repair costs | ✅ Configurable economy system |
 
 ---
 
@@ -54,9 +54,9 @@
 ### 🎮 Universal Durability Detection
 
 - **Vanilla Items** — Tools, armor, weapons, elytra, trident, shield
-- **MMOItems** — Full support via official API (bukan NBT parsing)
-- **Automatic Lore Sync** — Update durability lore otomatis setelah repair
-- **Fallback System** — Tetap berjalan meski MMOItems tidak tersedia
+- **MMOItems** — Full support via official API (not NBT parsing)
+- **Automatic Lore Sync** — Update durability lore automatically after repair
+- **Fallback System** — Runs even without MMOItems
 
 ### 🖥️ Simplified Repair GUI
 
@@ -72,30 +72,30 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Repair Hand** — Repair item di tangan langsung (instant)
-- **Repair All** — Repair seluruh item rusak di inventory
-- **Close** — Tutup GUI dengan sound effect
-- **Simple & Fast** — Hanya 3 tombol, tidak ada slot input/preview yang membingungkan
+- **Repair Hand** — Repair item in hand instantly
+- **Repair All** — Repair all damaged items in inventory
+- **Close** — Close GUI with sound effect
+- **Simple & Fast** — Only 3 buttons, no confusing input/preview slots
 
 ### 💰 Economy & Cost System
 
-Tiga metode pembayaran tersedia:
+Three payment methods available:
 
-| # | Metode | Deskripsi | Contoh Tampilan |
-|---|--------|-----------|-----------------|
-| 1 | **Vault Economy** | Integrasi dengan economy plugin manapun | `$10.00` |
-| 2 | **XP Levels** | Bayar dengan experience levels | `5 XP Levels` |
-| 3 | **Item Cost** | Bayar dengan item tertentu | `10x Iron Ingot` |
+| # | Method | Description | Example Display |
+|---|--------|-------------|-----------------|
+| 1 | **Vault Economy** | Integrates with any economy plugin | `$10.00` |
+| 2 | **XP Levels** | Pay with experience levels | `5 XP Levels` |
+| 3 | **Item Cost** | Pay with specific items | `10x Iron Ingot` |
 
 ### 🛡️ Safety & Protection
 
-| Proteksi | Deskripsi |
-|----------|-----------|
-| **NBT Preservation** | Enchantment, custom model data, dan lore tetap utuh |
-| **Soulbound Check** | Menghormati item soulbound dari plugin lain |
-| **Blacklist System** | Blokir material, nama, atau lore tertentu |
-| **Cost Cap** | Batas maksimum biaya repair mencegah eksploitasi |
-| **Rollback Safety** | Repair gagal akan memulihkan item ke kondisi awal |
+| Protection | Description |
+|------------|-------------|
+| **NBT Preservation** | Enchantments, custom model data, and lore remain intact |
+| **Soulbound Check** | Respects soulbound items from other plugins |
+| **Blacklist System** | Blocks specific materials, names, or lore |
+| **Cost Cap** | Maximum repair cost limit prevents exploitation |
+| **Rollback Safety** | Failed repairs restore item to original state |
 
 ---
 
@@ -103,8 +103,8 @@ Tiga metode pembayaran tersedia:
 
 ### Requirements
 
-| Dependency | Versi | Status |
-|------------|-------|--------|
+| Dependency | Version | Status |
+|------------|---------|--------|
 | Paper / Spigot / Purpur | 1.21+ | ✅ Required |
 | Java | 21+ | ✅ Required |
 | MMOItems | 6.9+ | ❌ Optional |
@@ -114,60 +114,60 @@ Tiga metode pembayaran tersedia:
 ### Quick Install
 
 ```
-1. Download  →  OmniRepair-1.0.0-SNAPSHOT.jar dari halaman Releases
-2. Copy      →  Letakkan JAR ke folder plugins/
-3. Start     →  Jalankan server untuk generate config
+1. Download  →  OmniRepair-1.0.0-SNAPSHOT.jar from Releases page
+2. Copy      →  Place JAR in server's plugins/ folder
+3. Start     →  Run server to generate config files
 4. Configure →  Edit plugins/OmniRepair/config.yml
-5. Reload    →  /repair reload (opsional)
+5. Reload    →  /repair reload (optional)
 ```
 
 ### Starter Config
 
 ```yaml
-# config.yml — Konfigurasi awal yang direkomendasikan
+# config.yml — Recommended starter configuration
 settings:
-  support-mmoitems: true      # Aktifkan jika menggunakan MMOItems
-  use-economy: true           # Aktifkan biaya repair
-  cost-per-percent: 10.0      # $10 per 1% durability hilang
-  max-cost: 5000.0            # Maksimum $5000 per repair
+  support-mmoitems: true      # Enable if using MMOItems
+  use-economy: true           # Enable repair costs
+  cost-per-percent: 10.0      # $10 per 1% durability lost
+  max-cost: 5000.0            # Maximum $5000 per repair
 
 mmoitems:
   enabled: true
   sync-lore: true
-  custom-cost-multiplier: 1.5 # MMOItems 50% lebih mahal
+  custom-cost-multiplier: 1.5 # MMOItems 50% more expensive
 ```
 
 ---
 
 ## 🎮 Usage
 
-### Perintah Dasar
+### Basic Commands
 
 ```bash
-/repair          # Buka repair GUI
-/repair hand     # Repair item yang sedang dipegang
-/repair all      # Repair semua item di inventory
-/repair help     # Tampilkan pesan bantuan
+/repair          # Open repair GUI
+/repair hand     # Repair item in hand instantly
+/repair all      # Repair all items in inventory
+/repair help     # Show help message
 ```
 
 ### GUI Workflow (Simplified)
 
 ```
-Step 1 → /repair untuk buka GUI
-Step 2 → Klik tombol "Repair Hand" untuk repair item di tangan
-         ATAU
-         Klik tombol "Repair All" untuk repair semua item di inventory
-Step 3 → Done! Item langsung ter-repair dengan efek suara & partikel
+Step 1 → /repair to open GUI
+Step 2 → Click "Repair Hand" button to repair item in hand
+         OR
+         Click "Repair All" button to repair all items in inventory
+Step 3 → Done! Item is repaired with sound & particle effects
 ```
 
-**Perubahan dari Versi Sebelumnya:**
+**Changes from Previous Versions:**
 
-| Versi Lama | Versi Baru |
-|------------|------------|
+| Old Version | New Version |
+|-------------|-------------|
 | 54 slots (6 rows) | 27 slots (3 rows) |
-| Input slot + Preview slot | Langsung repair |
-| Cost display terpisah | Cost ditampil di chat |
-| 6+ tombol | Hanya 3 tombol |
+| Input slot + Preview slot | Direct repair |
+| Separate cost display | Cost shown in chat |
+| 6+ buttons | Only 3 buttons |
 | Multi-step process | One-click repair |
 
 ---
@@ -178,26 +178,26 @@ Step 3 → Done! Item langsung ter-repair dengan efek suara & partikel
 
 ```yaml
 settings:
-  debug: false                # Aktifkan debug mode (console logging)
-  support-mmoitems: true      # Dukungan MMOItems
-  use-economy: true           # Integrasi economy
+  debug: false                # Enable debug mode (console logging)
+  support-mmoitems: true      # MMOItems support
+  use-economy: true           # Economy integration
 
-  # Konfigurasi biaya
-  cost-per-percent: 10.0      # Biaya per 1% durability hilang
-  max-cost: 5000.0            # Batas maksimum biaya repair
-  min-cost: 5.0               # Biaya minimum repair
+  # Cost configuration
+  cost-per-percent: 10.0      # Cost per 1% durability lost
+  max-cost: 5000.0            # Maximum repair cost
+  min-cost: 5.0               # Minimum repair cost
 
-  # Toggle fitur
-  repair-held-item: true      # Izinkan /repair hand
-  bulk-repair: true           # Izinkan /repair all
-  max-bulk-repair: 360        # Maks item dalam bulk repair
+  # Feature toggles
+  repair-held-item: true      # Allow /repair hand
+  bulk-repair: true           # Allow /repair all
+  max-bulk-repair: 360        # Max items in bulk repair
 ```
 
 ### 2. Blacklist Configuration
 
 ```yaml
 blacklist:
-  # Material yang tidak bisa direpair
+  # Materials that cannot be repaired
   materials:
     - BEDROCK
     - BARRIER
@@ -205,22 +205,22 @@ blacklist:
     - STRUCTURE_BLOCK
     - ENCHANTED_GOLDEN_APPLE
     - TOTEM_OF_UNDYING
-    - ELYTRA           # Opsional: lindungi elytra
-    - TRIDENT          # Opsional: lindungi trident
+    - ELYTRA           # Optional: protect elytra
+    - TRIDENT          # Optional: protect trident
 
-  # Item dengan lore tertentu (case-insensitive)
+  # Items with specific lore (case-insensitive)
   lore-contains:
     - "&lEVENT ITEM"
     - "&cNO REPAIR"
     - "Unrepairable"
     - "[Event]"
 
-  # Item dengan display name tertentu
+  # Items with specific display name
   name-contains:
     - "Event Item"
     - "Admin Item"
 
-  # MMOItems ID yang diblacklist
+  # MMOItems IDs to blacklist
   mmoitems-ids:
     - "EXAMPLE_SWORD_EVENT"
     - "EXAMPLE_ARMOR_BOSS"
@@ -231,18 +231,18 @@ blacklist:
 ```yaml
 mmoitems:
   enabled: true
-  custom-cost-multiplier: 1.5   # 1.5 = 50% lebih mahal dari vanilla
+  custom-cost-multiplier: 1.5   # 1.5 = 50% more expensive than vanilla
 
-  # Otomatis update lore durability setelah repair
+  # Automatically update durability lore after repair
   sync-lore: true
 
-  # Format lore (placeholder: {current}, {max}, {percent})
+  # Lore format (placeholder: {current}, {max}, {percent})
   lore-format:
     enabled: true
     line: "&7Durability: &a{current} &7/ &a{max} &7(&e{percent}%&7)"
     position: "ADD_BOTTOM"      # ADD_BOTTOM | ADD_TOP | REPLACE_EXISTING
 
-  # Pola lore yang akan diganti (jika REPLACE_EXISTING)
+  # Lore patterns to replace (if using REPLACE_EXISTING)
   lore-patterns:
     - ".*Durability:.*"
     - ".*HP:.*"
@@ -254,17 +254,17 @@ mmoitems:
 economy:
   enabled: true
 
-  # Alternatif: Bayar dengan item
+  # Alternative: Pay with items
   use-item-cost: false
   cost-item:
     material: "IRON_INGOT"
     amount-per-percent: 0.01
 
-  # Alternatif: Bayar dengan XP
+  # Alternative: Pay with XP
   use-xp-cost: false
   xp-per-percent: 0.5
 
-  # Permission untuk repair gratis
+  # Permission for free repair
   free-repair-permission: "omnirepair.free"
 ```
 
@@ -278,9 +278,9 @@ safety:
     - "Soul Bound"
     - "&9Soulbound"
 
-  preserve-nbt: true            # Selalu jaga NBT (tidak bisa dinonaktifkan)
-  check-balance: true           # Cek saldo sebelum repair
-  max-durability-restore: 0     # 0 = tidak terbatas
+  preserve-nbt: true            # Always preserve NBT (cannot be disabled)
+  check-balance: true           # Check balance before repair
+  max-durability-restore: 0     # 0 = unlimited
 ```
 
 ### 6. GUI Customization
@@ -288,46 +288,46 @@ safety:
 ```yaml
 gui:
   title: "&8&l🔨 RPG Mender"
-  size: 27                       # 3 rows untuk GUI sederhana
-  
+  size: 27                       # 3 rows for simplified GUI
+
   background: "BLACK_STAINED_GLASS_PANE"
   background-name: " "
 
-  # Posisi slot - Hanya 3 tombol
+  # Slot positions - Only 3 buttons
   slots:
-    repair-hand: 10    # Left - Repair item di tangan
-    repair-all: 12     # Right - Repair semua item inventory
-    close: 4           # Center - Tutup GUI
+    repair-hand: 10    # Left - Repair item in hand
+    repair-all: 12     # Right - Repair all inventory
+    close: 4           # Center - Close GUI
 
-  # Material tombol
+  # Button materials
   buttons:
     repair-hand: "ANVIL"
     repair-all: "HOPPER"
     close: "BARRIER"
 
-  # Nama tombol (supports color codes)
+  # Button names (supports color codes)
   button-names:
     repair-hand: "&a&lRepair Hand"
     repair-hand-lore:
       - ""
-      - "&7Klik untuk memperbaiki"
-      - "&7item yang ada di tanganmu."
+      - "&7Click to repair the item"
+      - "&7in your hand."
       - ""
-      - "&eBiaya: Sesuai damage"
-    
+      - "&eCost: Based on damage"
+
     repair-all: "&e&lRepair All Inventory"
     repair-all-lore:
       - ""
-      - "&7Klik untuk memperbaiki"
-      - "&7semua item rusak di"
-      - "&7inventorymu."
+      - "&7Click to repair all"
+      - "&7damaged items in your"
+      - "&7inventory."
       - ""
-      - "&eButuh permission: omnirepair.bulk"
-    
+      - "&eRequires permission: omnirepair.bulk"
+
     close: "&c&lClose"
     close-lore:
       - ""
-      - "&7Tutup GUI ini"
+      - "&7Close this GUI"
 ```
 
 ### 7. Visual Effects
@@ -382,78 +382,78 @@ Row 3:  [18][19][20][21][22][23][24][25][26]
 
 ### Slot Assignments (Default)
 
-| Slot | Posisi | Fungsi |
-|------|--------|--------|
-| **10** | Row 2, Col 2 | **Repair Hand** — Repair item di tangan |
-| **12** | Row 2, Col 4 | **Repair All** — Repair semua item inventory |
-| **4**  | Row 1, Col 5 | **Close** — Tutup GUI |
+| Slot | Position | Function |
+|------|----------|----------|
+| **10** | Row 2, Col 2 | **Repair Hand** — Repair item in hand |
+| **12** | Row 2, Col 4 | **Repair All** — Repair all inventory items |
+| **4**  | Row 1, Col 5 | **Close** — Close GUI |
 
 ### Button Functions
 
-| Button | Permission | Deskripsi |
-|--------|------------|-----------|
-| **Repair Hand** | `omnirepair.hand` | Repair item yang sedang dipegang langsung |
-| **Repair All** | `omnirepair.bulk` | Repair semua item rusak di inventory |
-| **Close** | None | Tutup GUI dengan sound effect |
+| Button | Permission | Description |
+|--------|------------|-------------|
+| **Repair Hand** | `omnirepair.hand` | Repair held item instantly |
+| **Repair All** | `omnirepair.bulk` | Repair all damaged items in inventory |
+| **Close** | None | Close GUI with sound effect |
 
 ---
 
 ## 💰 Economy System
 
-### Formula Perhitungan Biaya
+### Cost Calculation Formula
 
 ```
 Base Cost  = Damage Percent × Cost Per Percent
-Final Cost = Base Cost × MMOItems Multiplier (jika berlaku)
-           → dibatasi antara Min Cost dan Max Cost
+Final Cost = Base Cost × MMOItems Multiplier (if applicable)
+           → capped between Min Cost and Max Cost
 ```
 
-### Contoh Kalkulasi
+### Calculation Examples
 
 **Vanilla Diamond Sword:**
 
 ```
 Durability    : 500 / 1562
-Kerusakan     : 1062 (68%)
+Damage        : 1062 (68%)
 Cost/Percent  : $10.00
-Kalkulasi     : 68 × $10 = $680.00
+Calculation   : 68 × $10 = $680.00
 ```
 
 **MMOItems Legendary Sword:**
 
 ```
 Durability    : 200 / 1000
-Kerusakan     : 800 (80%)
+Damage        : 800 (80%)
 Cost/Percent  : $10.00
 MMO Multiplier: 1.5×
-Kalkulasi     : 80 × $10 × 1.5 = $1,200.00
+Calculation   : 80 × $10 × 1.5 = $1,200.00
 ```
 
-### Perbandingan Metode Pembayaran
+### Payment Method Comparison
 
-| Metode | Kelebihan | Kekurangan | Cocok Untuk |
-|--------|-----------|------------|-------------|
-| **Money** | Simpel, universal | Butuh economy plugin | RPG, Skyblock |
-| **XP** | Vanilla-friendly | Grind untuk player | Survival, Hardcore |
-| **Items** | Imersif | Butuh farming | Tech, Magic server |
+| Method | Advantages | Disadvantages | Best For |
+|--------|------------|---------------|----------|
+| **Money** | Simple, universal | Requires economy plugin | RPG, Skyblock |
+| **XP** | Vanilla-friendly | Grind for players | Survival, Hardcore |
+| **Items** | Immersive | Requires farming | Tech, Magic servers |
 
 ---
 
 ## ⚔️ MMOItems Integration
 
-### Alur Kerja
+### Workflow
 
 ```
-1. Detection  →  Cek apakah item adalah MMOItem via MMOItems.getID()
-2. Read       →  Ambil current/max durability via MMOItems API
-3. Repair     →  Pulihkan durability via MMOItems API
-4. Sync       →  Update lore durability otomatis
+1. Detection  →  Check if item is MMOItem via MMOItems.getID()
+2. Read       →  Get current/max durability via MMOItems API
+3. Repair     →  Restore durability via MMOItems API
+4. Sync       →  Update durability lore automatically
 ```
 
-### Fitur yang Didukung
+### Supported Features
 
-| Fitur | Status |
-|-------|--------|
+| Feature | Status |
+|---------|--------|
 | Custom Durability | ✅ Full support |
 | Lore Synchronization | ✅ Full support |
 | Type-based Repair | ✅ Full support |
@@ -464,15 +464,15 @@ Kalkulasi     : 80 × $10 × 1.5 = $1,200.00
 
 ## 🔐 Permissions
 
-| Permission | Deskripsi | Default |
-|------------|-----------|---------|
-| `omnirepair.use` | Buka repair GUI | `true` (semua player) |
-| `omnirepair.hand` | Gunakan `/repair hand` | `true` (semua player) |
-| `omnirepair.bulk` | Gunakan `/repair all` | `false` (OP only) |
-| `omnirepair.admin` | Perintah admin (`reload`, `debug`) | `op` |
-| `omnirepair.free` | Repair gratis (bypass semua biaya) | `false` |
+| Permission | Description | Default |
+|------------|-------------|---------|
+| `omnirepair.use` | Open repair GUI | `true` (all players) |
+| `omnirepair.hand` | Use `/repair hand` | `true` (all players) |
+| `omnirepair.bulk` | Use `/repair all` | `false` (OP only) |
+| `omnirepair.admin` | Admin commands (`reload`, `debug`) | `op` |
+| `omnirepair.free` | Free repair (bypass all costs) | `false` |
 
-### Contoh Setup Permission
+### Permission Setup Examples
 
 **Survival Server:**
 
@@ -480,10 +480,10 @@ Kalkulasi     : 80 × $10 × 1.5 = $1,200.00
 permissions:
   omnirepair.use: true
   omnirepair.hand: true
-  omnirepair.bulk: false    # Hanya OP yang bisa bulk repair
+  omnirepair.bulk: false    # Only OP can bulk repair
 ```
 
-**RPG Server (dengan VIP):**
+**RPG Server (with VIP):**
 
 ```yaml
 groups:
@@ -492,7 +492,7 @@ groups:
       - omnirepair.use
       - omnirepair.hand
       - omnirepair.bulk
-      - omnirepair.free     # VIP dapat repair gratis!
+      - omnirepair.free     # VIP gets free repair!
   default:
     permissions:
       - omnirepair.use
@@ -505,18 +505,18 @@ groups:
 
 ### Player Commands
 
-| Command | Deskripsi | Permission |
-|---------|-----------|------------|
-| `/repair` | Buka repair GUI | `omnirepair.use` |
-| `/repair hand` | Repair item yang dipegang | `omnirepair.hand` |
-| `/repair all` | Repair semua item inventory | `omnirepair.bulk` |
-| `/repair help` | Tampilkan pesan bantuan | `omnirepair.use` |
+| Command | Description | Permission |
+|---------|-------------|------------|
+| `/repair` | Open repair GUI | `omnirepair.use` |
+| `/repair hand` | Repair held item | `omnirepair.hand` |
+| `/repair all` | Repair all inventory items | `omnirepair.bulk` |
+| `/repair help` | Show help message | `omnirepair.use` |
 
 ### Admin Commands
 
-| Command | Deskripsi | Permission |
-|---------|-----------|------------|
-| `/repair reload` | Reload semua file konfigurasi | `omnirepair.admin` |
+| Command | Description | Permission |
+|---------|-------------|------------|
+| `/repair reload` | Reload all configuration files | `omnirepair.admin` |
 | `/repair debug` | Toggle debug mode | `omnirepair.admin` |
 
 ### Aliases

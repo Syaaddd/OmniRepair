@@ -96,7 +96,7 @@ public class ItemUtils {
         }
 
         Damageable damageable = (Damageable) meta;
-        
+
         // Check if item has damage
         if (!damageable.hasDamage()) {
             return false;
@@ -105,14 +105,15 @@ public class ItemUtils {
         int damage = damageable.getDamage();
         int maxDurability = getMaxVanillaDurability(item.getType());
 
-        // Item is damaged if damage > 0 and damage < maxDurability
-        boolean isDamaged = damage > 0 && damage < maxDurability;
-        
+        // Item is damaged if damage > 0 and damage <= maxDurability
+        // In Minecraft, damage increases as item is used (0 = new, maxDurability = broken)
+        boolean isDamaged = damage > 0 && damage <= maxDurability;
+
         if (plugin.getConfig().getBoolean("settings.debug", false)) {
-            plugin.getLogger().info("[DEBUG] hasVanillaDamage: " + isDamaged + 
+            plugin.getLogger().info("[DEBUG] hasVanillaDamage: " + isDamaged +
                 " (damage=" + damage + ", max=" + maxDurability + ") for " + item.getType().name());
         }
-        
+
         return isDamaged;
     }
 

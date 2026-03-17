@@ -5,7 +5,7 @@
 
 settings:
   # Enable debug mode (shows detailed console messages)
-  debug: true
+  debug: false
   
   # Use MMOItems API for custom durability detection if available
   support-mmoitems: true
@@ -178,24 +178,24 @@ gui:
     repair-hand: "&a&lRepair Hand"
     repair-hand-lore:
       - ""
-      - "&7Klik untuk memperbaiki"
-      - "&7item yang ada di tanganmu."
+      - "&7Click to repair the item"
+      - "&7in your hand."
       - ""
-      - "&eBiaya: Sesuai damage"
-    
+      - "&eCost: Based on damage"
+
     repair-all: "&e&lRepair All Inventory"
     repair-all-lore:
       - ""
-      - "&7Klik untuk memperbaiki"
-      - "&7semua item rusak di"
-      - "&7inventorymu."
+      - "&7Click to repair all"
+      - "&7damaged items in your"
+      - "&7inventory."
       - ""
-      - "&eButuh permission: omnirepair.bulk"
-    
+      - "&eRequires permission: omnirepair.bulk"
+
     close: "&c&lClose"
     close-lore:
       - ""
-      - "&7Tutup GUI ini"
+      - "&7Close this GUI"
 
 # ═══════════════════════════════════════════════════════════════
 # VISUAL EFFECTS

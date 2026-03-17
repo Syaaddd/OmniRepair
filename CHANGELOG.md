@@ -5,15 +5,15 @@
 ### 🎯 Simplified GUI System
 
 #### Problem
-- GUI terlalu kompleks dengan slot input, preview, dan cost display
-- Player bingung dengan alur repair yang berbelit
-- Terlalu banyak klik untuk repair item sederhana
+- GUI too complex with input slots, preview, and cost display
+- Players confused by complicated repair workflow
+- Too many clicks to repair simple items
 
 #### Solution
-**New Simplified GUI** - Hanya 3 tombol:
-- **Repair Hand** - Repair item di tangan langsung
-- **Repair All Inventory** - Repair semua item rusak di inventory
-- **Close GUI** - Tutup interface
+**New Simplified GUI** - Only 3 buttons:
+- **Repair Hand** - Repair item in hand instantly
+- **Repair All Inventory** - Repair all damaged items in inventory
+- **Close GUI** - Close interface
 
 #### GUI Layout (27 slots - 3 rows)
 ```
@@ -39,18 +39,18 @@ messages.yml               - Updated button messages
 ```yaml
 gui:
   size: 27  # Changed from 54 to 27
-  
+
   slots:
     repair-hand: 10    # New - Left slot
     repair-all: 12     # New - Right slot
     close: 4           # New - Center slot
-  
+
   button-names:
     repair-hand: "&a&lRepair Hand"
     repair-hand-lore:
       - ""
-      - "&7Klik untuk memperbaiki"
-      - "&7item yang ada di tanganmu."
+      - "&7Click to repair the item"
+      - "&7in your hand."
 ```
 
 ---

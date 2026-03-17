@@ -136,12 +136,13 @@ public class MMOItemsHook {
 
         try {
             String id = MMOItems.getID(item);
-            boolean isMMO = id != null;
-            
+            // Check if ID is not null AND not empty (vanilla items return empty string)
+            boolean isMMO = id != null && !id.isEmpty();
+
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                 plugin.getLogger().info("[DEBUG] isMMOItem check: " + (isMMO ? "ID=" + id : "Not an MMOItem"));
             }
-            
+
             return isMMO;
         } catch (Exception e) {
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
@@ -486,8 +487,8 @@ public class MMOItemsHook {
                                 }
                                 return damaged;
                             }
-                            
-                            // Punya stat durability tapi tidak bisa baca NBT - assume damaged
+
+                            // Has durability stat but cannot read NBT - assume damaged
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                                 plugin.getLogger().info("[DEBUG] Method 4 Result: Has durability stat, assuming damaged");
                             }

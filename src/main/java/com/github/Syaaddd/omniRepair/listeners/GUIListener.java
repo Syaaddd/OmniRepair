@@ -95,32 +95,12 @@ public class GUIListener implements Listener {
             plugin.getLogger().info("[DEBUG] MMOItems Hook enabled: " + (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()));
             plugin.getLogger().info("[DEBUG] isMMOItem result: " + (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isMMOItem(itemInHand)));
         }
-        
-        // For MMOItems, check if it's a valid MMOItem
-        // For Vanilla items, use ItemUtils.isDamaged()
-        boolean isDamaged = false;
-        
-        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled() 
-                && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
-            // MMOItems item - if it's valid MMOItem, allow repair
-            isDamaged = hasDurabilityStat(itemInHand);
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] MMOItem validity check: " + isDamaged);
-            }
-        } else {
-            // Vanilla item - use normal damage check from ItemUtils
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] Calling ItemUtils.isDamaged() for vanilla item...");
-            }
-            isDamaged = plugin.getItemUtils().isDamaged(itemInHand);
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] isDamaged result (vanilla): " + isDamaged);
-            }
-        }
-        
+
+        // Check if item is damaged using ItemUtils (handles both vanilla and MMOItems)
+        boolean isDamaged = plugin.getItemUtils().isDamaged(itemInHand);
+
         if (plugin.getConfig().getBoolean("settings.debug", false)) {
             plugin.getLogger().info("[DEBUG] Final isDamaged result: " + isDamaged);
-            plugin.getLogger().info("[DEBUG] Checking if item can be repaired...");
         }
 
         if (!isDamaged) {
@@ -129,22 +109,11 @@ public class GUIListener implements Listener {
             return;
         }
 
-        // For MMOItems, skip canRepair check since we already validated it
-        // For vanilla items, check blacklist and soulbound
-        boolean canRepair;
-        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled() 
-                && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
-            // MMOItems - already validated, check only blacklist
-            canRepair = !isBlacklisted(itemInHand);
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] MMOItem blacklist check: " + !canRepair);
-            }
-        } else {
-            // Vanilla - full check
-            canRepair = plugin.getItemUtils().canRepair(itemInHand);
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] canRepair result: " + canRepair);
-            }
+        // Check if item can be repaired (blacklist, soulbound, etc.)
+        boolean canRepair = plugin.getItemUtils().canRepair(itemInHand);
+
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] canRepair result: " + canRepair);
         }
 
         if (!canRepair) {

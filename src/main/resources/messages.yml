@@ -74,22 +74,22 @@ gui:
   repair-hand-button-name: "&a&lRepair Hand"
   repair-hand-button-lore:
     - ""
-    - "&7Klik untuk memperbaiki"
-    - "&7item yang ada di tanganmu."
+    - "&7Click to repair the item"
+    - "&7in your hand."
     - ""
-    - "&eBiaya: Sesuai damage"
+    - "&eCost: Based on damage"
 
   repair-all-button-name: "&e&lRepair All Inventory"
   repair-all-button-lore:
     - ""
-    - "&7Klik untuk memperbaiki"
-    - "&7semua item rusak di"
-    - "&7inventorymu."
+    - "&7Click to repair all"
+    - "&7damaged items in your"
+    - "&7inventory."
     - ""
-    - "&eButuh permission: omnirepair.bulk"
+    - "&eRequires permission: omnirepair.bulk"
 
   close-button-name: "&c&lClose"
-  close-button-lore: "&7Tutup GUI ini"
+  close-button-lore: "&7Close this GUI"
 
   # Error messages in GUI
   gui-invalid-item: "&cInvalid item for repair!"
