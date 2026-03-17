@@ -348,6 +348,7 @@ public class MMOItemsHook {
 
     /**
      * Check if an MMOItem is damaged.
+     * Uses multiple fallback methods to detect damage.
      */
     public boolean isDamaged(ItemStack item) {
         if (!enabled || item == null || item.getType() == Material.AIR) {
@@ -355,10 +356,122 @@ public class MMOItemsHook {
         }
 
         try {
-            double current = getDurability(item);
-            double max = getMaxDurability(item);
-            return current >= 0 && max > 0 && current < max;
+            // Method 1: Use API methods if available
+            if (getDurabilityMethod != null && getMaxDurabilityMethod != null) {
+                double current = getDurability(item);
+                double max = getMaxDurability(item);
+                if (current >= 0 && max > 0) {
+                    boolean damaged = current < max;
+                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                        plugin.getLogger().info("[DEBUG] API Method - Current: " + current + ", Max: " + max + ", Damaged: " + damaged);
+                    }
+                    return damaged;
+                }
+            }
+
+            // Method 2: Read directly from NBT using PersistentDataContainer
+            double nbtCurrent = readDurabilityFromNBT(item);
+            double nbtMax = readMaxDurabilityFromNBT(item);
+            
+            if (nbtCurrent >= 0 && nbtMax > 0) {
+                boolean damaged = nbtCurrent < nbtMax;
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] NBT Method - Current: " + nbtCurrent + ", Max: " + nbtMax + ", Damaged: " + damaged);
+                }
+                return damaged;
+            }
+
+            // Method 3: Use MMOItems internal NBT compound directly
+            try {
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    // Try to access the internal NMS compound via reflection
+                    // This is a last resort for detecting damage
+                    Class<?> nbtCompoundClass = null;
+                    Object nbtCompound = null;
+                    
+                    // Try different method names for getting NBT data
+                    try {
+                        Method getTagMethod = meta.getClass().getDeclaredMethod("getTag");
+                        getTagMethod.setAccessible(true);
+                        nbtCompound = getTagMethod.invoke(meta);
+                    } catch (NoSuchMethodException e) {
+                        // Method not available, try alternative
+                    }
+                    
+                    if (nbtCompound != null) {
+                        // Check for common durability-related NBT tags
+                        if (nbtCompound instanceof org.bukkit.persistence.PersistentDataHolder) {
+                            org.bukkit.persistence.PersistentDataContainer pdc = 
+                                ((org.bukkit.persistence.PersistentDataHolder) nbtCompound).getPersistentDataContainer();
+                            
+                            // Check all keys for durability-related data
+                            for (org.bukkit.NamespacedKey key : pdc.getKeys()) {
+                                if (key.getKey().toLowerCase().contains("durability") || 
+                                    key.getKey().toLowerCase().contains("hp") ||
+                                    key.getKey().toLowerCase().contains("health")) {
+                                    // Found durability-related NBT, item likely has durability
+                                    // Assume it might be damaged since other methods failed
+                                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                        plugin.getLogger().info("[DEBUG] Found durability NBT key: " + key);
+                                    }
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore NBT reflection errors
+            }
+
+            // Method 4: Check if item has MMOItems ID and durability stat
+            String id = net.Indyuce.mmoitems.MMOItems.getID(item);
+            if (id != null) {
+                Object type = net.Indyuce.mmoitems.MMOItems.getType(item);
+                if (type != null) {
+                    try {
+                        net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem = 
+                            net.Indyuce.mmoitems.MMOItems.plugin.getMMOItem(type.toString(), id);
+                        if (mmoItem != null) {
+                            // Check if this MMOItem type has durability
+                            Object durabilityStat = mmoItem.getStat("DURABILITY");
+                            if (durabilityStat != null) {
+                                // This item has durability stat - check current HP
+                                Object currentHp = mmoItem.getStat("CURRENT_HP");
+                                if (currentHp != null) {
+                                    // Has both max durability and current HP
+                                    double maxHp = Double.parseDouble(durabilityStat.toString());
+                                    double hp = Double.parseDouble(currentHp.toString());
+                                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                        plugin.getLogger().info("[DEBUG] MMOItem Stat - HP: " + hp + " / " + maxHp);
+                                    }
+                                    return hp < maxHp;
+                                }
+                                // Has durability but can't read current HP - assume damaged
+                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                    plugin.getLogger().info("[DEBUG] MMOItem has durability stat, assuming damaged");
+                                }
+                                return true;
+                            }
+                        }
+                    } catch (Exception e) {
+                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                            plugin.getLogger().warning("[DEBUG] Error checking MMOItem stats: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] Could not determine if MMOItem is damaged");
+            }
+            return false;
         } catch (Exception e) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("[DEBUG] Error checking if MMOItem is damaged: " + e.getMessage());
+                e.printStackTrace();
+            }
             return false;
         }
     }

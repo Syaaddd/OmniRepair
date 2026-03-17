@@ -29,17 +29,26 @@ public class ItemUtils {
             return false;
         }
 
-        // Check vanilla durability
-        if (hasVanillaDamage(item)) {
-            return true;
-        }
-
-        // Check MMOItems durability
+        // Check MMOItems durability FIRST (higher priority for RPG items)
         if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()) {
-            return plugin.getMmoItemsHook().isDamaged(item);
+            // Check if it's an MMOItem first
+            if (plugin.getMmoItemsHook().isMMOItem(item)) {
+                boolean isDamaged = plugin.getMmoItemsHook().isDamaged(item);
+                
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    String mmoId = net.Indyuce.mmoitems.MMOItems.getID(item);
+                    double current = plugin.getMmoItemsHook().getDurability(item);
+                    double max = plugin.getMmoItemsHook().getMaxDurability(item);
+                    plugin.getLogger().info("[DEBUG] MMOItem Check - ID: " + mmoId + 
+                        ", Current: " + current + ", Max: " + max + ", IsDamaged: " + isDamaged);
+                }
+                
+                return isDamaged;
+            }
         }
 
-        return false;
+        // Check vanilla durability for non-MMOItems
+        return hasVanillaDamage(item);
     }
 
     /**
