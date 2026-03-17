@@ -48,7 +48,13 @@ public class ItemUtils {
         }
 
         // Check vanilla durability for non-MMOItems
-        return hasVanillaDamage(item);
+        boolean vanillaDamaged = hasVanillaDamage(item);
+        
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] Vanilla item damage check: " + vanillaDamaged + " for " + item.getType().name());
+        }
+        
+        return vanillaDamaged;
     }
 
     /**
@@ -65,11 +71,18 @@ public class ItemUtils {
         }
 
         ItemMeta meta = item.getItemMeta();
-        if (meta == null || !(meta instanceof Damageable)) {
+        if (meta == null) {
+            return false;
+        }
+
+        // Check if meta is Damageable
+        if (!(meta instanceof Damageable)) {
             return false;
         }
 
         Damageable damageable = (Damageable) meta;
+        
+        // Check if item has damage
         if (!damageable.hasDamage()) {
             return false;
         }
@@ -77,7 +90,15 @@ public class ItemUtils {
         int damage = damageable.getDamage();
         int maxDurability = getMaxVanillaDurability(item.getType());
 
-        return damage > 0 && damage < maxDurability;
+        // Item is damaged if damage > 0 and damage < maxDurability
+        boolean isDamaged = damage > 0 && damage < maxDurability;
+        
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] hasVanillaDamage: " + isDamaged + 
+                " (damage=" + damage + ", max=" + maxDurability + ") for " + item.getType().name());
+        }
+        
+        return isDamaged;
     }
 
     /**
