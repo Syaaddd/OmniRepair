@@ -151,7 +151,15 @@ public class GUIListener implements Listener {
         }
 
         // Check if player can afford
-        if (!plugin.getEconomyHandler().canAfford(player, cost)) {
+        boolean canAfford = plugin.getEconomyHandler().canAfford(player, cost);
+        
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] Can afford: " + canAfford + " (cost: " + cost + ")");
+            plugin.getLogger().info("[DEBUG] Economy enabled: " + plugin.getEconomyHandler().isUsingEconomy());
+            plugin.getLogger().info("[DEBUG] Player balance: " + plugin.getVaultHook().getBalanceFormatted(player));
+        }
+        
+        if (!canAfford) {
             sendMessage(player, plugin.getMessages().getString("repair.insufficient-funds")
                     .replace("{needed}", plugin.getVaultHook().format(cost))
                     .replace("{balance}", plugin.getVaultHook().getBalanceFormatted(player)));
@@ -162,21 +170,35 @@ public class GUIListener implements Listener {
         // Perform repair based on item type
         ItemStack repairedItem;
 
-        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()
-                && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
-            
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] Using MMOItems repair");
+        try {
+            if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()
+                    && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
+
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] Using MMOItems repair");
+                }
+
+                repairedItem = plugin.getMmoItemsRepair().repair(itemInHand, player);
+            } else {
+
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] Using Vanilla repair");
+                }
+
+                repairedItem = plugin.getVanillaRepair().repair(itemInHand, player);
             }
-            
-            repairedItem = plugin.getMmoItemsRepair().repair(itemInHand, player);
-        } else {
-            
+        } catch (Exception e) {
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] Using Vanilla repair");
+                plugin.getLogger().severe("[DEBUG] Repair exception: " + e.getMessage());
+                e.printStackTrace();
             }
-            
-            repairedItem = plugin.getVanillaRepair().repair(itemInHand, player);
+            sendMessage(player, "&cAn error occurred while repairing. Check console.");
+            playErrorSound(player);
+            return;
+        }
+
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] Repaired item result: " + (repairedItem != null ? "success" : "null"));
         }
 
         if (repairedItem == null) {
@@ -186,7 +208,14 @@ public class GUIListener implements Listener {
         }
 
         // Withdraw payment
-        if (!plugin.getEconomyHandler().withdraw(player, cost)) {
+        boolean withdrawn = plugin.getEconomyHandler().withdraw(player, cost);
+        
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] Withdraw result: " + withdrawn);
+            plugin.getLogger().info("[DEBUG] Player balance after: " + plugin.getVaultHook().getBalanceFormatted(player));
+        }
+        
+        if (!withdrawn) {
             sendMessage(player, plugin.getMessages().getString("repair.insufficient-funds"));
             playErrorSound(player);
             return;
