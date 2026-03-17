@@ -94,7 +94,8 @@ public class GUIListener implements Listener {
             plugin.getLogger().info("[DEBUG] Checking if item is damaged...");
         }
         
-        // For MMOItems, just check if it's a valid MMOItem (has durability stat or not)
+        // For MMOItems, check if it's a valid MMOItem
+        // For Vanilla items, use ItemUtils.isDamaged()
         boolean isDamaged;
         if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled() 
                 && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
@@ -104,12 +105,15 @@ public class GUIListener implements Listener {
                 plugin.getLogger().info("[DEBUG] MMOItem validity check: " + isDamaged);
             }
         } else {
-            // Vanilla item - use normal damage check
+            // Vanilla item - use normal damage check from ItemUtils
             isDamaged = plugin.getItemUtils().isDamaged(itemInHand);
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] isDamaged result (vanilla): " + isDamaged);
+            }
         }
         
         if (plugin.getConfig().getBoolean("settings.debug", false)) {
-            plugin.getLogger().info("[DEBUG] isDamaged result: " + isDamaged);
+            plugin.getLogger().info("[DEBUG] Final isDamaged result: " + isDamaged);
             plugin.getLogger().info("[DEBUG] Checking if item can be repaired...");
         }
 
