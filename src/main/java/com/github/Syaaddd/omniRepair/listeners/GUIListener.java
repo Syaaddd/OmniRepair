@@ -119,11 +119,22 @@ public class GUIListener implements Listener {
             return;
         }
 
-        // Check if item can be repaired (not blacklisted, not soulbound)
-        boolean canRepair = plugin.getItemUtils().canRepair(itemInHand);
-        
-        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-            plugin.getLogger().info("[DEBUG] canRepair result: " + canRepair);
+        // For MMOItems, skip canRepair check since we already validated it
+        // For vanilla items, check blacklist and soulbound
+        boolean canRepair;
+        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled() 
+                && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
+            // MMOItems - already validated, check only blacklist
+            canRepair = !isBlacklisted(itemInHand);
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] MMOItem blacklist check: " + !canRepair);
+            }
+        } else {
+            // Vanilla - full check
+            canRepair = plugin.getItemUtils().canRepair(itemInHand);
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] canRepair result: " + canRepair);
+            }
         }
 
         if (!canRepair) {
@@ -417,6 +428,30 @@ public class GUIListener implements Listener {
                 plugin.getLogger().warning("[DEBUG] hasDurabilityStat error: " + e.getMessage());
                 e.printStackTrace();
             }
+            return false;
+        }
+    }
+
+    /**
+     * Check if an MMOItem is blacklisted.
+     */
+    private boolean isBlacklisted(ItemStack item) {
+        try {
+            String id = net.Indyuce.mmoitems.MMOItems.getID(item);
+            if (id == null) {
+                return false;
+            }
+
+            // Check MMOItems ID blacklist from config
+            java.util.List<String> blacklist = plugin.getConfig().getStringList("blacklist.mmoitems-ids");
+            for (String blacklistedId : blacklist) {
+                if (blacklistedId.equalsIgnoreCase(id)) {
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (Exception e) {
             return false;
         }
     }
