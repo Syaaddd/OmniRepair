@@ -1,8 +1,6 @@
 package com.github.Syaaddd.omniRepair.commands;
 
 import com.github.Syaaddd.omniRepair.OmniRepair;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -22,11 +20,9 @@ import java.util.List;
 public class RepairCommand implements CommandExecutor, TabCompleter {
 
     private final OmniRepair plugin;
-    private final LegacyComponentSerializer serializer;
 
     public RepairCommand(OmniRepair plugin) {
         this.plugin = plugin;
-        this.serializer = LegacyComponentSerializer.legacyAmpersand();
     }
 
     @Override
@@ -233,19 +229,15 @@ public class RepairCommand implements CommandExecutor, TabCompleter {
         if (message == null || message.isEmpty()) {
             return;
         }
-        
+
         String prefix = plugin.getMessages().getString("prefix", "&8[&6OmniRepair&8] ");
-        sender.sendMessage(Component.text(colorize(prefix + message)));
+        sender.sendMessage(plugin.getLoreUpdater().colorize(prefix + message));
     }
 
     /**
      * Colorize a string.
      */
     private String colorize(String text) {
-        if (text == null) {
-            return "";
-        }
-        Component component = serializer.deserialize(text);
-        return serializer.serialize(component);
+        return plugin.getLoreUpdater().colorize(text);
     }
 }

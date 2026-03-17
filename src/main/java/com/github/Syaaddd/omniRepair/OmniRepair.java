@@ -12,7 +12,6 @@ import com.github.Syaaddd.omniRepair.repair.VanillaRepair;
 import com.github.Syaaddd.omniRepair.utils.ItemUtils;
 import com.github.Syaaddd.omniRepair.utils.LoreUpdater;
 import com.github.Syaaddd.omniRepair.utils.NBTProtection;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.logging.Level;
 
 /**
  * OmniRepair - Repair Vanilla & RPG Items Safely. MMOItems Supported.
@@ -331,17 +329,13 @@ public final class OmniRepair extends JavaPlugin {
      */
     public String getMessage(String path) {
         String message = messagesConfig.getString(path, "");
-        return colorize(message);
+        return loreUpdater.colorize(message);
     }
 
     /**
      * Colorize a string using legacy color codes.
      */
     public String colorize(String text) {
-        if (text == null || text.isEmpty()) {
-            return "";
-        }
-        LegacyComponentSerializer serializer = LegacyComponentSerializer.legacyAmpersand();
-        return serializer.serialize(serializer.deserialize(text));
+        return loreUpdater.colorize(text);
     }
 }

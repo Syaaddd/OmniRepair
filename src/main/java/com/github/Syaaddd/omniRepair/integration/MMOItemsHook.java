@@ -3,8 +3,11 @@ package com.github.Syaaddd.omniRepair.integration;
 import com.github.Syaaddd.omniRepair.OmniRepair;
 import net.Indyuce.mmoitems.MMOItems;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.reflect.Method;
 
@@ -17,22 +20,27 @@ public class MMOItemsHook {
 
     private final OmniRepair plugin;
     private boolean enabled = false;
-    
+
     // Reflection methods for MMOItems API compatibility
     private Method getDurabilityMethod = null;
     private Method getMaxDurabilityMethod = null;
     private Method setDurabilityMethod = null;
     private Method applyMMOItemMethod = null;
+    
+    // NBT Keys for MMOItems durability
+    private NamespacedKey durabilityKey = null;
+    private NamespacedKey maxDurabilityKey = null;
 
     public MMOItemsHook(OmniRepair plugin) {
         this.plugin = plugin;
-        
+
         // Check if MMOItems is available
         if (plugin.getServer().getPluginManager().getPlugin("MMOItems") != null) {
             this.enabled = plugin.getConfig().getBoolean("mmoitems.enabled", true);
             if (enabled) {
                 plugin.getLogger().info("✓ MMOItems integration enabled");
                 initializeReflection();
+                initializeNBTKeys();
             } else {
                 plugin.getLogger().info("✗ MMOItems integration disabled in config");
             }
@@ -48,22 +56,22 @@ public class MMOItemsHook {
         try {
             // Try to find the durability methods in MMOItems class
             Class<?> mmoItemsClass = MMOItems.class;
-            
+
             // Look for methods that work with ItemStack
             for (Method method : mmoItemsClass.getDeclaredMethods()) {
-                if (method.getName().equals("getDurability") && 
+                if (method.getName().equals("getDurability") &&
                     method.getParameterCount() == 1 &&
                     method.getParameterTypes()[0] == ItemStack.class) {
                     getDurabilityMethod = method;
                     getDurabilityMethod.setAccessible(true);
                 }
-                if (method.getName().equals("getMaxDurability") && 
+                if (method.getName().equals("getMaxDurability") &&
                     method.getParameterCount() == 1 &&
                     method.getParameterTypes()[0] == ItemStack.class) {
                     getMaxDurabilityMethod = method;
                     getMaxDurabilityMethod.setAccessible(true);
                 }
-                if (method.getName().equals("setDurability") && 
+                if (method.getName().equals("setDurability") &&
                     method.getParameterCount() == 2 &&
                     method.getParameterTypes()[0] == ItemStack.class &&
                     (method.getParameterTypes()[1] == double.class || method.getParameterTypes()[1] == Double.class ||
@@ -72,7 +80,7 @@ public class MMOItemsHook {
                     setDurabilityMethod.setAccessible(true);
                 }
             }
-            
+
             // Also try to find applyMMOItem method for repair
             for (Method method : mmoItemsClass.getDeclaredMethods()) {
                 if (method.getName().equals("applyMMOItem") || method.getName().equals("getMMOItem")) {
@@ -80,7 +88,7 @@ public class MMOItemsHook {
                     applyMMOItemMethod.setAccessible(true);
                 }
             }
-            
+
             if (getDurabilityMethod != null) {
                 plugin.getLogger().info("  ✓ Found getDurability method via reflection");
             }
@@ -89,10 +97,25 @@ public class MMOItemsHook {
             }
             if (setDurabilityMethod != null) {
                 plugin.getLogger().info("  ✓ Found setDurability method via reflection");
+            } else {
+                plugin.getLogger().info("  ⚠ setDurability method not found - will use NBT fallback");
             }
-            
+
         } catch (Exception e) {
             plugin.getLogger().warning("  ⚠ Could not initialize MMOItems reflection: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Initialize NBT keys for MMOItems durability.
+     */
+    private void initializeNBTKeys() {
+        try {
+            // Common MMOItems NBT keys
+            durabilityKey = new NamespacedKey("mmoitems", "durability");
+            maxDurabilityKey = new NamespacedKey("mmoitems", "max_durability");
+        } catch (Exception e) {
+            plugin.getLogger().warning("  ⚠ Could not initialize NBT keys: " + e.getMessage());
         }
     }
 
@@ -110,7 +133,7 @@ public class MMOItemsHook {
         if (!enabled || item == null || item.getType() == Material.AIR) {
             return false;
         }
-        
+
         try {
             String id = MMOItems.getID(item);
             return id != null;
@@ -122,13 +145,14 @@ public class MMOItemsHook {
     /**
      * Get the current durability of an MMOItem.
      * Uses reflection for API compatibility across versions.
+     * Falls back to NBT reading if reflection fails.
      * @return Current durability, or -1 if not an MMOItem or error occurred
      */
     public double getDurability(ItemStack item) {
         if (!enabled || item == null || item.getType() == Material.AIR) {
             return -1;
         }
-        
+
         try {
             // First try the static method via reflection
             if (getDurabilityMethod != null) {
@@ -139,18 +163,18 @@ public class MMOItemsHook {
                     return ((Integer) result).doubleValue();
                 }
             }
-            
-            // Fallback: Try to get from NBT/ItemMeta
-            // MMOItems stores durability in NBT, we can try to read it
-            ItemMeta meta = item.getItemMeta();
-            if (meta != null && meta.hasLore()) {
-                // Try to parse durability from lore as last resort
-                // This is not ideal but works when API fails
+
+            // Fallback: Try to read from NBT
+            double nbtDurability = readDurabilityFromNBT(item);
+            if (nbtDurability >= 0) {
+                return nbtDurability;
             }
-            
+
             return -1;
         } catch (Exception e) {
-            plugin.getLogger().warning("Error getting durability: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("Error getting durability: " + e.getMessage());
+            }
             return -1;
         }
     }
@@ -163,7 +187,7 @@ public class MMOItemsHook {
         if (!enabled || item == null || item.getType() == Material.AIR) {
             return -1;
         }
-        
+
         try {
             // First try the static method via reflection
             if (getMaxDurabilityMethod != null) {
@@ -174,16 +198,89 @@ public class MMOItemsHook {
                     return ((Integer) result).doubleValue();
                 }
             }
-            
+
+            // Fallback: Try to read from NBT
+            double nbtMaxDurability = readMaxDurabilityFromNBT(item);
+            if (nbtMaxDurability >= 0) {
+                return nbtMaxDurability;
+            }
+
             return -1;
         } catch (Exception e) {
-            plugin.getLogger().warning("Error getting max durability: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("Error getting max durability: " + e.getMessage());
+            }
             return -1;
         }
     }
 
     /**
+     * Read durability from NBT data.
+     */
+    private double readDurabilityFromNBT(ItemStack item) {
+        try {
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) return -1;
+            
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            
+            // Try common NBT keys used by MMOItems
+            if (container.has(durabilityKey, PersistentDataType.DOUBLE)) {
+                return container.get(durabilityKey, PersistentDataType.DOUBLE);
+            }
+            if (container.has(durabilityKey, PersistentDataType.INTEGER)) {
+                return container.get(durabilityKey, PersistentDataType.INTEGER).doubleValue();
+            }
+            
+            // Try alternative key names
+            NamespacedKey altKey = new NamespacedKey("mmoitems", "current_durability");
+            if (container.has(altKey, PersistentDataType.DOUBLE)) {
+                return container.get(altKey, PersistentDataType.DOUBLE);
+            }
+            
+        } catch (Exception e) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("Error reading durability from NBT: " + e.getMessage());
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Read max durability from NBT data.
+     */
+    private double readMaxDurabilityFromNBT(ItemStack item) {
+        try {
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) return -1;
+            
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            
+            // Try common NBT keys used by MMOItems
+            if (container.has(maxDurabilityKey, PersistentDataType.DOUBLE)) {
+                return container.get(maxDurabilityKey, PersistentDataType.DOUBLE);
+            }
+            if (container.has(maxDurabilityKey, PersistentDataType.INTEGER)) {
+                return container.get(maxDurabilityKey, PersistentDataType.INTEGER).doubleValue();
+            }
+            
+            // Try alternative key names
+            NamespacedKey altKey = new NamespacedKey("mmoitems", "max_hp");
+            if (container.has(altKey, PersistentDataType.DOUBLE)) {
+                return container.get(altKey, PersistentDataType.DOUBLE);
+            }
+            
+        } catch (Exception e) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("Error reading max durability from NBT: " + e.getMessage());
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Repair an MMOItem by setting its durability to maximum.
+     * Uses reflection if available, falls back to NBT modification.
      * @param item The item to repair
      * @return true if successful, false otherwise
      */
@@ -191,26 +288,60 @@ public class MMOItemsHook {
         if (!enabled || item == null || item.getType() == Material.AIR) {
             return false;
         }
-        
+
         try {
             double maxDurability = getMaxDurability(item);
             if (maxDurability < 0) {
                 return false;
             }
-            
-            // Use reflection to call setDurability
+
+            // Try using reflection first
             if (setDurabilityMethod != null) {
                 setDurabilityMethod.invoke(null, item, maxDurability);
                 return true;
             }
-            
-            // Fallback: Try using NBT modification
-            // This is a last resort and may not work on all versions
-            plugin.getLogger().warning("setDurability method not found, repair may not work properly");
-            return false;
-            
+
+            // Fallback: Use NBT modification
+            return repairViaNBT(item, maxDurability);
+
         } catch (Exception e) {
             plugin.getLogger().warning("Error repairing MMOItem: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Repair item by modifying NBT data directly.
+     */
+    private boolean repairViaNBT(ItemStack item, double maxDurability) {
+        try {
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) return false;
+            
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            
+            // Set durability to max
+            container.set(durabilityKey, PersistentDataType.DOUBLE, maxDurability);
+            
+            // Also update alternative keys for compatibility
+            NamespacedKey altKey = new NamespacedKey("mmoitems", "current_durability");
+            container.set(altKey, PersistentDataType.DOUBLE, maxDurability);
+            
+            item.setItemMeta(meta);
+            
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("  ✓ Repaired MMOItem via NBT: " + MMOItems.getID(item));
+            }
+            
+            return true;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error repairing MMOItem via NBT: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                e.printStackTrace();
+            }
             return false;
         }
     }
@@ -222,7 +353,7 @@ public class MMOItemsHook {
         if (!enabled || item == null || item.getType() == Material.AIR) {
             return false;
         }
-        
+
         try {
             double current = getDurability(item);
             double max = getMaxDurability(item);
@@ -240,15 +371,15 @@ public class MMOItemsHook {
         if (!enabled || item == null || item.getType() == Material.AIR) {
             return -1;
         }
-        
+
         try {
             double current = getDurability(item);
             double max = getMaxDurability(item);
-            
+
             if (current < 0 || max <= 0) {
                 return -1;
             }
-            
+
             return (current / max) * 100.0;
         } catch (Exception e) {
             return -1;
@@ -274,7 +405,7 @@ public class MMOItemsHook {
         if (!enabled || mmoItemId == null) {
             return false;
         }
-        
+
         return plugin.getConfig().getStringList("blacklist.mmoitems-ids")
                 .stream()
                 .anyMatch(id -> id.equalsIgnoreCase(mmoItemId));

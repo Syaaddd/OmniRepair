@@ -3,8 +3,6 @@ package com.github.Syaaddd.omniRepair.listeners;
 import com.github.Syaaddd.omniRepair.OmniRepair;
 import com.github.Syaaddd.omniRepair.repair.MMOItemsRepair;
 import com.github.Syaaddd.omniRepair.repair.VanillaRepair;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,11 +20,9 @@ import java.util.List;
 public class RepairListener implements Listener {
 
     private final OmniRepair plugin;
-    private final LegacyComponentSerializer serializer;
 
     public RepairListener(OmniRepair plugin) {
         this.plugin = plugin;
-        this.serializer = LegacyComponentSerializer.legacyAmpersand();
     }
 
     /**
@@ -122,7 +118,7 @@ public class RepairListener implements Listener {
             if (plugin.getConfig().getBoolean("effects.action-bar.enabled", true)) {
                 String message = plugin.getMessages().getString("action-bar.repair-success")
                         .replace("{cost}", plugin.getEconomyHandler().getCostString(totalCost));
-                player.sendActionBar(Component.text(colorize(message)));
+                player.sendActionBar(net.kyori.adventure.text.Component.text(colorize(message)));
             }
 
             sendMessage(player, plugin.getMessages().getString("repair.success-bulk")
@@ -202,12 +198,12 @@ public class RepairListener implements Listener {
             if (plugin.getConfig().getBoolean("effects.action-bar.enabled", true)) {
                 String message = plugin.getMessages().getString("action-bar.repair-success")
                         .replace("{cost}", plugin.getEconomyHandler().getCostString(cost));
-                player.sendActionBar(Component.text(colorize(message)));
+                player.sendActionBar(net.kyori.adventure.text.Component.text(colorize(message)));
             }
 
             sendMessage(player, plugin.getMessages().getString("repair.success")
                     .replace("{cost}", plugin.getEconomyHandler().getCostString(cost)));
-            
+
             return true;
         }
 
@@ -259,19 +255,15 @@ public class RepairListener implements Listener {
         if (message == null || message.isEmpty()) {
             return;
         }
-        
+
         String prefix = plugin.getMessages().getString("prefix", "&8[&6OmniRepair&8] ");
-        player.sendMessage(Component.text(colorize(prefix + message)));
+        player.sendMessage(plugin.getLoreUpdater().colorize(prefix + message));
     }
 
     /**
      * Colorize a string.
      */
     private String colorize(String text) {
-        if (text == null) {
-            return "";
-        }
-        Component component = serializer.deserialize(text);
-        return serializer.serialize(component);
+        return plugin.getLoreUpdater().colorize(text);
     }
 }

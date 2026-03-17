@@ -58,26 +58,24 @@
 - **Automatic Lore Sync** — Update durability lore otomatis setelah repair
 - **Fallback System** — Tetap berjalan meski MMOItems tidak tersedia
 
-### 🖥️ Smart Repair GUI
+### 🖥️ Simplified Repair GUI
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   🔨 RPG Mender                         │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│   ┌─────┐                  ┌─────┐     ┌─────┐        │
-│   │Input│  →  [Preview] →  │Cost │     │ ... │        │
-│   └─────┘                  └─────┘     └─────┘        │
+│   [Repair Hand]        [     ]     [Repair All]        │
 │                                                         │
-│         [🛠️ Repair All]  [🔨 Repair]  [❌ Close]       │
+│   [     ]            [Close]         [     ]           │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Live Preview** — Lihat item setelah repair sebelum membayar
-- **Cost Display** — Harga transparan ditampilkan di depan
-- **Bulk Repair** — Repair seluruh inventory sekaligus
-- **RPG Theme** — Dark theme imersif dengan custom styling
+- **Repair Hand** — Repair item di tangan langsung (instant)
+- **Repair All** — Repair seluruh item rusak di inventory
+- **Close** — Tutup GUI dengan sound effect
+- **Simple & Fast** — Hanya 3 tombol, tidak ada slot input/preview yang membingungkan
 
 ### 💰 Economy & Cost System
 
@@ -152,22 +150,25 @@ mmoitems:
 /repair help     # Tampilkan pesan bantuan
 ```
 
-### GUI Workflow
+### GUI Workflow (Simplified)
 
 ```
-Step 1 → Letakkan item rusak di slot Input (kiri)
-Step 2 → Lihat preview dan biaya di slot tengah/kanan
-Step 3 → Klik tombol 🔨 Repair
-Step 4 → Ambil item yang sudah diperbaiki!
+Step 1 → /repair untuk buka GUI
+Step 2 → Klik tombol "Repair Hand" untuk repair item di tangan
+         ATAU
+         Klik tombol "Repair All" untuk repair semua item di inventory
+Step 3 → Done! Item langsung ter-repair dengan efek suara & partikel
 ```
 
-**Contoh Output:**
+**Perubahan dari Versi Sebelumnya:**
 
-```
-Input   : Diamond Sword (Durability: 500 / 1562)
-Preview : Diamond Sword (Durability: 1562 / 1562)
-Cost    : $106.50
-```
+| Versi Lama | Versi Baru |
+|------------|------------|
+| 54 slots (6 rows) | 27 slots (3 rows) |
+| Input slot + Preview slot | Langsung repair |
+| Cost display terpisah | Cost ditampil di chat |
+| 6+ tombol | Hanya 3 tombol |
+| Multi-step process | One-click repair |
 
 ---
 
@@ -287,31 +288,46 @@ safety:
 ```yaml
 gui:
   title: "&8&l🔨 RPG Mender"
-  size: 54                       # Harus kelipatan 9, maks 54
+  size: 27                       # 3 rows untuk GUI sederhana
+  
   background: "BLACK_STAINED_GLASS_PANE"
   background-name: " "
 
-  # Posisi slot
+  # Posisi slot - Hanya 3 tombol
   slots:
-    input: 10
-    preview: 16
-    cost: 28
-    repair-button: 31
-    repair-all-button: 29
-    close-button: 33
+    repair-hand: 10    # Left - Repair item di tangan
+    repair-all: 12     # Right - Repair semua item inventory
+    close: 4           # Center - Tutup GUI
 
   # Material tombol
   buttons:
-    repair: "ANVIL"
+    repair-hand: "ANVIL"
     repair-all: "HOPPER"
     close: "BARRIER"
-    cost-display: "GOLD_BLOCK"
 
-  # Nama tombol
+  # Nama tombol (supports color codes)
   button-names:
-    repair: "&a&lREPAIR ITEM"
+    repair-hand: "&a&lRepair Hand"
+    repair-hand-lore:
+      - ""
+      - "&7Klik untuk memperbaiki"
+      - "&7item yang ada di tanganmu."
+      - ""
+      - "&eBiaya: Sesuai damage"
+    
     repair-all: "&e&lRepair All Inventory"
+    repair-all-lore:
+      - ""
+      - "&7Klik untuk memperbaiki"
+      - "&7semua item rusak di"
+      - "&7inventorymu."
+      - ""
+      - "&eButuh permission: omnirepair.bulk"
+    
     close: "&c&lClose"
+    close-lore:
+      - ""
+      - "&7Tutup GUI ini"
 ```
 
 ### 7. Visual Effects
@@ -356,27 +372,29 @@ worldguard:
 
 ## 🎨 GUI Guide
 
-### Slot Layout (54-Slot GUI)
+### Simplified GUI Layout (27-Slot - 3 Rows)
 
 ```
 Row 1:  [ 0][ 1][ 2][ 3][ 4][ 5][ 6][ 7][ 8]
-Row 2:  [ 9][10][11][12][13][14][15][16][17]
+Row 2:  [ 9][10][11][12][13][14][15][16][26]
 Row 3:  [18][19][20][21][22][23][24][25][26]
-Row 4:  [27][28][29][30][31][32][33][34][35]
-Row 5:  [36][37][38][39][40][41][42][43][44]
-Row 6:  [45][46][47][48][49][50][51][52][53]
 ```
 
 ### Slot Assignments (Default)
 
 | Slot | Posisi | Fungsi |
 |------|--------|--------|
-| **10** | Row 2, Col 2 | **Input** — Letakkan item rusak di sini |
-| **16** | Row 2, Col 8 | **Preview** — Tampilan item setelah repair |
-| **28** | Row 4, Col 2 | **Cost Display** — Informasi biaya repair |
-| **29** | Row 4, Col 3 | **Repair All** — Bulk repair seluruh inventory |
-| **31** | Row 4, Col 5 | **Repair** — Repair item tunggal |
-| **33** | Row 4, Col 7 | **Close** — Tutup GUI |
+| **10** | Row 2, Col 2 | **Repair Hand** — Repair item di tangan |
+| **12** | Row 2, Col 4 | **Repair All** — Repair semua item inventory |
+| **4**  | Row 1, Col 5 | **Close** — Tutup GUI |
+
+### Button Functions
+
+| Button | Permission | Deskripsi |
+|--------|------------|-----------|
+| **Repair Hand** | `omnirepair.hand` | Repair item yang sedang dipegang langsung |
+| **Repair All** | `omnirepair.bulk` | Repair semua item rusak di inventory |
+| **Close** | None | Tutup GUI dengan sound effect |
 
 ---
 

@@ -1,14 +1,14 @@
 package com.github.Syaaddd.omniRepair.utils;
 
 import com.github.Syaaddd.omniRepair.OmniRepair;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utility class for updating item lore, especially durability displays.
@@ -17,11 +17,39 @@ import java.util.List;
 public class LoreUpdater {
 
     private final OmniRepair plugin;
-    private final LegacyComponentSerializer serializer;
+    private static final Pattern HEX_PATTERN = Pattern.compile("&#([A-Fa-f0-9]{6})");
 
     public LoreUpdater(OmniRepair plugin) {
         this.plugin = plugin;
-        this.serializer = LegacyComponentSerializer.legacyAmpersand();
+    }
+
+    /**
+     * Translate color codes including hex colors.
+     */
+    public String colorize(String text) {
+        if (text == null) {
+            return "";
+        }
+        
+        // First translate legacy color codes (&a, &c, etc.)
+        String colored = ChatColor.translateAlternateColorCodes('&', text);
+        
+        // Then translate hex colors (&#RRGGBB)
+        Matcher matcher = HEX_PATTERN.matcher(colored);
+        StringBuffer buffer = new StringBuffer();
+        
+        while (matcher.find()) {
+            String hex = matcher.group(1);
+            char[] chars = hex.toCharArray();
+            StringBuilder sb = new StringBuilder();
+            for (char c : chars) {
+                sb.append(ChatColor.COLOR_CHAR).append(c);
+            }
+            matcher.appendReplacement(buffer, sb.toString());
+        }
+        matcher.appendTail(buffer);
+        
+        return buffer.toString();
     }
 
     /**
@@ -66,9 +94,8 @@ public class LoreUpdater {
                     .replace("{max}", String.valueOf((int) maxDurability))
                     .replace("{percent}", String.valueOf(percent));
 
-            // Convert legacy color codes to Component and back for proper formatting
-            Component component = serializer.deserialize(formattedLine);
-            String coloredLine = serializer.serialize(component);
+            // Colorize the line
+            String coloredLine = colorize(formattedLine);
 
             // Handle position
             if ("REPLACE_EXISTING".equalsIgnoreCase(position)) {
@@ -138,10 +165,9 @@ public class LoreUpdater {
                         .replace("{max}", String.valueOf((int) maxDurability))
                         .replace("{percent}", String.valueOf(percent))
                         .replace("{damagePercent}", String.valueOf(damagePercent))
-                        .replace("{cost}", plugin.getVaultHook().format(cost));
+                        .replace("{cost}", String.valueOf(cost));
 
-                Component component = serializer.deserialize(formatted);
-                String coloredLine = serializer.serialize(component);
+                String coloredLine = colorize(formatted);
                 lore.add(coloredLine);
             }
 
@@ -201,22 +227,11 @@ public class LoreUpdater {
     }
 
     /**
-     * Colorize a string using legacy color codes.
-     */
-    public String colorize(String text) {
-        if (text == null) {
-            return "";
-        }
-        Component component = serializer.deserialize(text);
-        return serializer.serialize(component);
-    }
-
-    /**
      * Get formatted durability string.
      */
     public String formatDurability(double current, double max) {
         int percent = (int) ((current / max) * 100);
-        String color = percent > 50 ? "&a" : percent > 25 ? "&e" : "&c";
-        return color + (int) current + " &7/ &a" + (int) max + " &7(" + color + percent + "%&7)";
+        String color = percent > 50 ? ChatColor.GREEN.toString() : percent > 25 ? ChatColor.YELLOW.toString() : ChatColor.RED.toString();
+        return color + (int) current + ChatColor.GRAY + " / " + ChatColor.GREEN + (int) max + ChatColor.GRAY + " (" + color + percent + "%" + ChatColor.GRAY + ")";
     }
 }

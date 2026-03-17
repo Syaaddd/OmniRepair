@@ -150,48 +150,52 @@ safety:
 gui:
   # GUI title (supports color codes)
   title: "&8&l🔨 RPG Mender"
-  
+
   # GUI size (must be multiple of 9, max 54)
-  size: 54
-  
+  # Using 27 (3 rows) for simplified GUI
+  size: 27
+
   # Background material
   background: "BLACK_STAINED_GLASS_PANE"
-  
+
   # Background display name
   background-name: " "
-  
-  # Slot positions
+
+  # Slot positions - Simplified GUI with only 3 buttons
   slots:
-    input: 10      # Left slot - Place item here
-    preview: 16    # Center slot - Preview result
-    cost: 28       # Right slot - Cost display
-    repair-button: 31    # Repair button (center bottom)
-    repair-all-button: 29  # Repair All button (left bottom)
-    close-button: 33     # Close button (right bottom)
-  
+    repair-hand: 10    # Left - Repair item in hand
+    repair-all: 12     # Right - Repair all inventory
+    close: 4           # Center - Close GUI
+
   # Button materials
   buttons:
-    repair: "ANVIL"
+    repair-hand: "ANVIL"
     repair-all: "HOPPER"
     close: "BARRIER"
-    cost-display: "GOLD_BLOCK"
-  
+
   # Button names (supports color codes)
   button-names:
-    repair: "&a&lREPAIR ITEM"
+    repair-hand: "&a&lRepair Hand"
+    repair-hand-lore:
+      - ""
+      - "&7Klik untuk memperbaiki"
+      - "&7item yang ada di tanganmu."
+      - ""
+      - "&eBiaya: Sesuai damage"
+    
     repair-all: "&e&lRepair All Inventory"
+    repair-all-lore:
+      - ""
+      - "&7Klik untuk memperbaiki"
+      - "&7semua item rusak di"
+      - "&7inventorymu."
+      - ""
+      - "&eButuh permission: omnirepair.bulk"
+    
     close: "&c&lClose"
-  
-  # Preview lore format
-  preview-lore:
-    - ""
-    - "&7Current Durability: &c{current}"
-    - "&7Max Durability: &a{max}"
-    - "&7Damage: &e{damagePercent}%"
-    - ""
-    - "&7Repair Cost: &a${cost}"
-    - ""
-    - "&fKlik untuk memperbaiki"
+    close-lore:
+      - ""
+      - "&7Tutup GUI ini"
 
 # ═══════════════════════════════════════════════════════════════
 # VISUAL EFFECTS

@@ -69,39 +69,28 @@ repair:
 gui:
   # Title (should match config.yml)
   title: "&8&l🔨 RPG Mender"
-  
-  # Item lore in preview slot
-  preview-durability: "&7Durability: &c{current} &7/ &a{max}"
-  preview-damage-percent: "&7Damage: &e{percent}%"
-  preview-cost: "&7Repair Cost: &a${cost}"
-  preview-click: "&fKlik untuk memperbaiki"
-  
-  # Cost display lore
-  cost-display-name: "&6&lRepair Cost"
-  cost-display-lore:
-    - "&7Base Cost: &e${base}"
-    - "&7Multiplier: &ex{multiplier}"
-    - "&7Total: &a${total}"
-  
+
   # Button messages
-  repair-button-name: "&a&lREPAIR ITEM"
-  repair-button-lore:
+  repair-hand-button-name: "&a&lRepair Hand"
+  repair-hand-button-lore:
     - ""
-    - "&7Click to repair the item"
-    - "&7in the preview slot."
-  
+    - "&7Klik untuk memperbaiki"
+    - "&7item yang ada di tanganmu."
+    - ""
+    - "&eBiaya: Sesuai damage"
+
   repair-all-button-name: "&e&lRepair All Inventory"
   repair-all-button-lore:
     - ""
-    - "&7Click to repair all"
-    - "&7damaged items in your"
-    - "&7inventory."
+    - "&7Klik untuk memperbaiki"
+    - "&7semua item rusak di"
+    - "&7inventorymu."
     - ""
-    - "&eClick to repair all"
-  
+    - "&eButuh permission: omnirepair.bulk"
+
   close-button-name: "&c&lClose"
-  close-button-lore: "&7Close the GUI"
-  
+  close-button-lore: "&7Tutup GUI ini"
+
   # Error messages in GUI
   gui-invalid-item: "&cInvalid item for repair!"
   gui-preview-error: "&cError calculating preview!"

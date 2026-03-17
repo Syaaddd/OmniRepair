@@ -2,9 +2,6 @@ package com.github.Syaaddd.omniRepair.listeners;
 
 import com.github.Syaaddd.omniRepair.OmniRepair;
 import com.github.Syaaddd.omniRepair.gui.RepairGUI;
-import com.github.Syaaddd.omniRepair.utils.ItemUtils;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -17,16 +14,14 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  * Handles all GUI-related events.
- * Manages item placement, preview updates, and repair actions.
+ * Manages the 3 simplified buttons: Repair Hand, Repair All, Close.
  */
 public class GUIListener implements Listener {
 
     private final OmniRepair plugin;
-    private final LegacyComponentSerializer serializer;
 
     public GUIListener(OmniRepair plugin) {
         this.plugin = plugin;
-        this.serializer = LegacyComponentSerializer.legacyAmpersand();
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -44,112 +39,119 @@ public class GUIListener implements Listener {
         event.setCancelled(true);
 
         int slot = event.getSlot();
-        ItemStack clickedItem = event.getCurrentItem();
 
-        // Check if clicked on repair button
-        if (slot == gui.getRepairButtonSlot()) {
-            handleRepairClick(player, gui);
+        // Check if clicked on Repair Hand button
+        if (slot == gui.getRepairHandSlot()) {
+            handleRepairHandClick(player, gui);
             return;
         }
 
-        // Check if clicked on repair all button
-        if (slot == gui.getRepairAllButtonSlot()) {
+        // Check if clicked on Repair All button
+        if (slot == gui.getRepairAllSlot()) {
             handleRepairAllClick(player, gui);
             return;
         }
 
-        // Check if clicked on close button
-        if (slot == gui.getCloseButtonSlot()) {
+        // Check if clicked on Close button
+        if (slot == gui.getCloseSlot()) {
             player.closeInventory();
-            return;
-        }
-
-        // Check if clicked on input slot
-        if (slot == gui.getInputSlot()) {
-            handleInputSlotClick(event, player, gui);
-            return;
-        }
-
-        // Check if clicked on preview slot (prevent taking item before repair)
-        if (slot == gui.getPreviewSlot()) {
-            handlePreviewSlotClick(player, gui);
+            playClickSound(player);
             return;
         }
     }
 
     /**
-     * Handle click on the repair button.
+     * Handle click on the Repair Hand button.
+     * Repairs the item in the player's hand instantly.
      */
-    private void handleRepairClick(Player player, RepairGUI gui) {
-        ItemStack inputItem = gui.getInputItem();
-        
-        if (inputItem == null || inputItem.getType().isAir()) {
+    private void handleRepairHandClick(Player player, RepairGUI gui) {
+        ItemStack itemInHand = player.getInventory().getItemInMainHand();
+
+        // Check if item in offhand if main hand is air
+        if (itemInHand == null || itemInHand.getType().isAir()) {
+            itemInHand = player.getInventory().getItemInOffHand();
+        }
+
+        // Check if player has an item
+        if (itemInHand == null || itemInHand.getType().isAir()) {
             sendMessage(player, plugin.getMessages().getString("repair.not-damaged"));
+            playErrorSound(player);
             return;
         }
 
-        if (!plugin.getItemUtils().canRepair(inputItem)) {
+        // Check if item is damaged
+        if (!plugin.getItemUtils().isDamaged(itemInHand)) {
+            sendMessage(player, plugin.getMessages().getString("repair.not-damaged"));
+            playErrorSound(player);
+            return;
+        }
+
+        // Check if item can be repaired (not blacklisted, not soulbound)
+        if (!plugin.getItemUtils().canRepair(itemInHand)) {
             sendMessage(player, plugin.getMessages().getString("repair.blacklisted"));
+            playErrorSound(player);
             return;
         }
 
-        double cost = gui.getCurrentCost();
-        
+        // Calculate repair cost
+        double cost = calculateRepairCost(itemInHand);
+
         // Check if player can afford
         if (!plugin.getEconomyHandler().canAfford(player, cost)) {
             sendMessage(player, plugin.getMessages().getString("repair.insufficient-funds")
                     .replace("{needed}", plugin.getVaultHook().format(cost))
                     .replace("{balance}", plugin.getVaultHook().getBalanceFormatted(player)));
+            playErrorSound(player);
             return;
         }
 
-        // Execute repair
-        boolean success = gui.executeRepair();
-        
-        if (success) {
-            // Play success sound
-            if (plugin.getConfig().getBoolean("effects.sound.enabled", true)) {
-                String soundName = plugin.getConfig().getString("effects.sound.type", "BLOCK_ANVIL_USE");
-                try {
-                    Sound sound = Sound.valueOf(soundName);
-                    float volume = (float) plugin.getConfig().getDouble("effects.sound.volume", 1.0);
-                    float pitch = (float) plugin.getConfig().getDouble("effects.sound.pitch", 1.0);
-                    player.playSound(player.getLocation(), sound, volume, pitch);
-                } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid sound type: " + soundName);
-                }
-            }
+        // Perform repair based on item type
+        ItemStack repairedItem;
 
-            // Spawn particles
-            if (plugin.getConfig().getBoolean("effects.particles.enabled", true)) {
-                spawnParticles(player);
-            }
-
-            // Send action bar message
-            if (plugin.getConfig().getBoolean("effects.action-bar.enabled", true)) {
-                String message = plugin.getMessages().getString("action-bar.repair-success")
-                        .replace("{cost}", plugin.getEconomyHandler().getCostString(cost));
-                player.sendActionBar(Component.text(colorize(message)));
-            }
-
-            sendMessage(player, plugin.getMessages().getString("repair.success")
-                    .replace("{cost}", plugin.getEconomyHandler().getCostString(cost)));
+        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled() 
+                && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
+            repairedItem = plugin.getMmoItemsRepair().repair(itemInHand, player);
         } else {
-            sendMessage(player, plugin.getMessages().getString("repair.blacklisted"));
+            repairedItem = plugin.getVanillaRepair().repair(itemInHand, player);
         }
+
+        if (repairedItem == null) {
+            sendMessage(player, plugin.getMessages().getString("repair.blacklisted"));
+            playErrorSound(player);
+            return;
+        }
+
+        // Withdraw payment
+        if (!plugin.getEconomyHandler().withdraw(player, cost)) {
+            sendMessage(player, plugin.getMessages().getString("repair.insufficient-funds"));
+            playErrorSound(player);
+            return;
+        }
+
+        // Success!
+        player.getInventory().setItemInMainHand(repairedItem);
+        
+        // Play success effects
+        playSuccessEffects(player, cost);
+
+        sendMessage(player, plugin.getMessages().getString("repair.success")
+                .replace("{cost}", plugin.getEconomyHandler().getCostString(cost)));
     }
 
     /**
-     * Handle click on the repair all button.
+     * Handle click on the Repair All button.
+     * Repairs all damaged items in player's inventory.
      */
     private void handleRepairAllClick(Player player, RepairGUI gui) {
         if (!player.hasPermission("omnirepair.bulk")) {
             sendMessage(player, plugin.getMessages().getString("general.no-permission"));
+            playErrorSound(player);
             return;
         }
 
         if (!plugin.getConfig().getBoolean("settings.bulk-repair", true)) {
             sendMessage(player, "&cBulk repair is disabled on this server.");
+            playErrorSound(player);
             return;
         }
 
@@ -158,41 +160,6 @@ public class GUIListener implements Listener {
 
         // Perform bulk repair
         plugin.getRepairListener().performBulkRepair(player);
-    }
-
-    /**
-     * Handle click on the input slot.
-     */
-    private void handleInputSlotClick(InventoryClickEvent event, Player player, RepairGUI gui) {
-        ItemStack cursor = event.getCursor();
-        ItemStack newInput = cursor != null ? cursor.clone() : null;
-
-        // Update GUI with new input item
-        gui.setInputItem(newInput);
-        
-        // Update the input slot display
-        if (cursor != null && !cursor.getType().isAir()) {
-            event.getInventory().setItem(gui.getInputSlot(), cursor.clone());
-        } else {
-            event.getInventory().setItem(gui.getInputSlot(), null);
-        }
-    }
-
-    /**
-     * Handle click on the preview slot.
-     */
-    private void handlePreviewSlotClick(Player player, RepairGUI gui) {
-        // Only allow taking the item after repair
-        ItemStack previewItem = gui.getPreviewItem();
-        ItemStack inputItem = gui.getInputItem();
-        
-        if (inputItem != null && !inputItem.getType().isAir()) {
-            // Item not repaired yet
-            sendMessage(player, plugin.getMessages().getString("gui.preview-error"));
-        } else if (previewItem != null && !previewItem.getType().isAir()) {
-            // Item is repaired, allow taking
-            // The item will be taken naturally since we don't cancel in this case
-        }
     }
 
     @EventHandler
@@ -215,14 +182,60 @@ public class GUIListener implements Listener {
 
         RepairGUI gui = plugin.getGuiManager().getGUI(player);
         if (gui != null) {
-            // Return input item to player if still in GUI
-            ItemStack inputItem = gui.getInputItem();
-            if (inputItem != null && !inputItem.getType().isAir()) {
-                // Give the item back to player
-                player.getInventory().addItem(inputItem);
-            }
-
             plugin.getGuiManager().removeGUI(player);
+        }
+    }
+
+    /**
+     * Calculate the repair cost for an item.
+     */
+    private double calculateRepairCost(ItemStack item) {
+        double damagePercent = plugin.getItemUtils().getDamagePercent(item);
+        if (damagePercent < 0) {
+            return 0;
+        }
+
+        double baseCost = damagePercent * plugin.getConfig().getDouble("settings.cost-per-percent", 10.0);
+
+        // Apply MMOItems multiplier
+        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isMMOItem(item)) {
+            baseCost *= plugin.getConfig().getDouble("mmoitems.custom-cost-multiplier", 1.5);
+        }
+
+        // Apply min/max
+        baseCost = Math.max(baseCost, plugin.getConfig().getDouble("settings.min-cost", 5.0));
+        baseCost = Math.min(baseCost, plugin.getConfig().getDouble("settings.max-cost", 5000.0));
+
+        return baseCost;
+    }
+
+    /**
+     * Play success effects (sound, particles, action bar).
+     */
+    private void playSuccessEffects(Player player, double cost) {
+        // Play sound
+        if (plugin.getConfig().getBoolean("effects.sound.enabled", true)) {
+            String soundName = plugin.getConfig().getString("effects.sound.type", "BLOCK_ANVIL_USE");
+            try {
+                Sound sound = Sound.valueOf(soundName);
+                float volume = (float) plugin.getConfig().getDouble("effects.sound.volume", 1.0);
+                float pitch = (float) plugin.getConfig().getDouble("effects.sound.pitch", 1.0);
+                player.playSound(player.getLocation(), sound, volume, pitch);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid sound type: " + soundName);
+            }
+        }
+
+        // Spawn particles
+        if (plugin.getConfig().getBoolean("effects.particles.enabled", true)) {
+            spawnParticles(player);
+        }
+
+        // Send action bar message
+        if (plugin.getConfig().getBoolean("effects.action-bar.enabled", true)) {
+            String message = plugin.getMessages().getString("action-bar.repair-success")
+                    .replace("{cost}", plugin.getEconomyHandler().getCostString(cost));
+            player.sendActionBar(net.kyori.adventure.text.Component.text(colorize(message)));
         }
     }
 
@@ -252,25 +265,43 @@ public class GUIListener implements Listener {
     }
 
     /**
+     * Play click sound.
+     */
+    private void playClickSound(Player player) {
+        try {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    /**
+     * Play error sound.
+     */
+    private void playErrorSound(Player player) {
+        try {
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    /**
      * Send a message to a player.
      */
     private void sendMessage(Player player, String message) {
         if (message == null || message.isEmpty()) {
             return;
         }
-        
+
         String prefix = plugin.getMessages().getString("prefix", "&8[&6OmniRepair&8] ");
-        player.sendMessage(Component.text(colorize(prefix + message)));
+        player.sendMessage(plugin.getLoreUpdater().colorize(prefix + message));
     }
 
     /**
      * Colorize a string.
      */
     private String colorize(String text) {
-        if (text == null) {
-            return "";
-        }
-        Component component = serializer.deserialize(text);
-        return serializer.serialize(component);
+        return plugin.getLoreUpdater().colorize(text);
     }
 }
