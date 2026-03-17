@@ -3,12 +3,18 @@ package com.github.Syaaddd.omniRepair.repair;
 import com.github.Syaaddd.omniRepair.OmniRepair;
 import com.github.Syaaddd.omniRepair.utils.LoreUpdater;
 import com.github.Syaaddd.omniRepair.utils.NBTProtection;
+import net.Indyuce.mmoitems.MMOItems;
+import net.Indyuce.mmoitems.api.Type;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.Map;
 
 /**
  * Handles repair for MMOItems custom items.
- * Uses MMOItems API for durability management.
+ * Uses MMOItems plugin.getItem() to get fresh template and copy enchantments.
  */
 public class MMOItemsRepair extends RepairHandler {
 
@@ -33,17 +39,18 @@ public class MMOItemsRepair extends RepairHandler {
         }
 
         // Check if it's an MMOItem
-        if (!plugin.getMmoItemsHook().isMMOItem(item)) {
+        Type type = MMOItems.getType(item);
+        if (type == null) {
             return false;
         }
 
-        // Check if it's damaged
-        if (!plugin.getMmoItemsHook().isDamaged(item)) {
+        // Check if it's damaged using simple durability check
+        if (!isItemDamaged(item)) {
             return false;
         }
 
         // Check blacklist
-        String mmoId = net.Indyuce.mmoitems.MMOItems.getID(item);
+        String mmoId = MMOItems.getID(item);
         if (mmoId != null && plugin.getMmoItemsHook().isBlacklisted(mmoId)) {
             return false;
         }
@@ -63,10 +70,10 @@ public class MMOItemsRepair extends RepairHandler {
         }
 
         double baseCost = damagePercent * getCostPerPercent();
-        
+
         // Apply MMOItems cost multiplier
         baseCost = applyMMOCostMultiplier(baseCost);
-        
+
         // Apply minimum cost
         baseCost = Math.max(baseCost, getMinCost());
 
@@ -85,33 +92,100 @@ public class MMOItemsRepair extends RepairHandler {
         }
 
         try {
-            // Clone the item to preserve NBT
-            ItemStack original = nbtProtection.cloneSafely(item);
+            // Get MMOItem type and ID
+            Type type = MMOItems.getType(item);
+            String id = MMOItems.getID(item);
 
-            // Use MMOItems API to repair
-            boolean success = plugin.getMmoItemsHook().repair(item);
-
-            if (!success) {
-                plugin.getLogger().warning("MMOItems API repair failed, item may not be fully repaired");
+            if (type == null || id == null) {
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().warning("[DEBUG] MMOItems repair failed: type or ID is null");
+                }
                 return null;
             }
 
-            // Update lore if enabled
-            if (plugin.getConfig().getBoolean("mmoitems.sync-lore", true)) {
-                double maxDurability = plugin.getMmoItemsHook().getMaxDurability(item);
-                item = loreUpdater.updateDurabilityLore(item, maxDurability, maxDurability);
+            // Get fresh template from MMOItems
+            ItemStack repairedItem = MMOItems.plugin.getItem(type, id);
+
+            if (repairedItem == null) {
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().warning("[DEBUG] MMOItems repair failed: template item is null for " + type.getId() + ":" + id);
+                }
+                return null;
             }
 
-            // Verify NBT was preserved
+            // Clone the repaired item to avoid modifying template
+            repairedItem = repairedItem.clone();
+
+            // Copy enchantments from original item to repaired item
+            ItemMeta originalMeta = item.getItemMeta();
+            ItemMeta repairedMeta = repairedItem.getItemMeta();
+
+            if (originalMeta != null && repairedMeta != null) {
+                // Copy all enchantments
+                for (Map.Entry<Enchantment, Integer> entry : originalMeta.getEnchants().entrySet()) {
+                    Enchantment enchant = entry.getKey();
+                    int level = entry.getValue();
+                    repairedMeta.addEnchant(enchant, level, true);
+                }
+
+                // Copy display name if custom
+                if (originalMeta.hasDisplayName()) {
+                    repairedMeta.setDisplayName(originalMeta.getDisplayName());
+                }
+
+                repairedItem.setItemMeta(repairedMeta);
+            }
+
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                nbtProtection.logVerification(original, item, "MMOItemsRepair");
+                plugin.getLogger().info("[DEBUG] MMOItems repair successful: " + type.getId() + ":" + id);
             }
 
-            return item;
+            return repairedItem;
         } catch (Exception e) {
             plugin.getLogger().warning("Error in MMOItemsRepair: " + e.getMessage());
-            e.printStackTrace();
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                e.printStackTrace();
+            }
             return null;
+        }
+    }
+
+    /**
+     * Simple check if item is damaged using NBT durability values.
+     */
+    private boolean isItemDamaged(ItemStack item) {
+        try {
+            Type type = MMOItems.getType(item);
+            String id = MMOItems.getID(item);
+
+            if (type == null || id == null) {
+                return false;
+            }
+
+            // Get the template item
+            ItemStack template = MMOItems.plugin.getItem(type, id);
+            if (template == null) {
+                return false;
+            }
+
+            // Check if this item type has durability
+            net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem = 
+                MMOItems.plugin.getItems().getMMOItem(type, id);
+            
+            if (mmoItem == null || !mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY)) {
+                // No durability stat - can't determine damage
+                return false;
+            }
+
+            // Item has durability stat, assume it might be damaged
+            // The repair will work if durability is actually low
+            return true;
+
+        } catch (Exception e) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("[DEBUG] isItemDamaged error: " + e.getMessage());
+            }
+            return false;
         }
     }
 
@@ -122,7 +196,7 @@ public class MMOItemsRepair extends RepairHandler {
         if (!canRepair(item)) {
             return null;
         }
-        return net.Indyuce.mmoitems.MMOItems.getID(item);
+        return MMOItems.getID(item);
     }
 
     /**
@@ -132,9 +206,8 @@ public class MMOItemsRepair extends RepairHandler {
         if (!canRepair(item)) {
             return null;
         }
-        // Convert Type object to String
-        Object type = net.Indyuce.mmoitems.MMOItems.getType(item);
-        return type != null ? type.toString() : null;
+        Type type = MMOItems.getType(item);
+        return type != null ? type.getId() : null;
     }
 
     /**

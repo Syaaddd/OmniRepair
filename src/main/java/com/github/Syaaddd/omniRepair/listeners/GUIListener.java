@@ -93,7 +93,19 @@ public class GUIListener implements Listener {
             plugin.getLogger().info("[DEBUG] Checking if item is damaged...");
         }
         
-        boolean isDamaged = plugin.getItemUtils().isDamaged(itemInHand);
+        // For MMOItems, use simpler check - just check if it has durability stat
+        boolean isDamaged;
+        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled() 
+                && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
+            // MMOItems item - check if it has durability stat
+            isDamaged = hasDurabilityStat(itemInHand);
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] MMOItem durability stat check: " + isDamaged);
+            }
+        } else {
+            // Vanilla item - use normal damage check
+            isDamaged = plugin.getItemUtils().isDamaged(itemInHand);
+        }
         
         if (plugin.getConfig().getBoolean("settings.debug", false)) {
             plugin.getLogger().info("[DEBUG] isDamaged result: " + isDamaged);
@@ -343,5 +355,40 @@ public class GUIListener implements Listener {
      */
     private String colorize(String text) {
         return plugin.getLoreUpdater().colorize(text);
+    }
+
+    /**
+     * Check if an MMOItem has durability stat.
+     */
+    private boolean hasDurabilityStat(ItemStack item) {
+        try {
+            net.Indyuce.mmoitems.api.Type type = net.Indyuce.mmoitems.MMOItems.getType(item);
+            String id = net.Indyuce.mmoitems.MMOItems.getID(item);
+
+            if (type == null || id == null) {
+                return false;
+            }
+
+            net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem =
+                net.Indyuce.mmoitems.MMOItems.plugin.getItems().getMMOItem(type, id);
+
+            if (mmoItem == null) {
+                return false;
+            }
+
+            // Check if item has DURABILITY stat
+            boolean hasDurability = mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY);
+
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] hasDurabilityStat: " + hasDurability + " for " + type.getId() + ":" + id);
+            }
+
+            return hasDurability;
+        } catch (Exception e) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("[DEBUG] hasDurabilityStat error: " + e.getMessage());
+            }
+            return false;
+        }
     }
 }
