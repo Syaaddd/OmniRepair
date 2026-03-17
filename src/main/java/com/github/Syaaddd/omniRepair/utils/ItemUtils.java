@@ -26,13 +26,24 @@ public class ItemUtils {
      */
     public boolean isDamaged(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] isDamaged: item is null or air");
+            }
             return false;
+        }
+
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] isDamaged: Checking item " + item.getType().name());
         }
 
         // Check MMOItems durability FIRST (higher priority for RPG items)
         if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()) {
             // Check if it's an MMOItem first
             if (plugin.getMmoItemsHook().isMMOItem(item)) {
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] isDamaged: Item is MMOItem, checking MMOItems hook");
+                }
+                
                 boolean isDamaged = plugin.getMmoItemsHook().isDamaged(item);
                 
                 if (plugin.getConfig().getBoolean("settings.debug", false)) {
@@ -48,6 +59,10 @@ public class ItemUtils {
         }
 
         // Check vanilla durability for non-MMOItems
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] isDamaged: Checking vanilla damage for " + item.getType().name());
+        }
+        
         boolean vanillaDamaged = hasVanillaDamage(item);
         
         if (plugin.getConfig().getBoolean("settings.debug", false)) {

@@ -5,7 +5,7 @@
 
 settings:
   # Enable debug mode (shows detailed console messages)
-  debug: false
+  debug: true
   
   # Use MMOItems API for custom durability detection if available
   support-mmoitems: true
