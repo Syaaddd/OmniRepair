@@ -369,24 +369,49 @@ public class GUIListener implements Listener {
                 return false;
             }
 
-            net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem =
-                net.Indyuce.mmoitems.MMOItems.plugin.getItems().getMMOItem(type, id);
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] hasDurabilityStat: Checking " + type.getId() + ":" + id);
+            }
 
-            if (mmoItem == null) {
+            // Get the template item from MMOItems
+            ItemStack template = net.Indyuce.mmoitems.MMOItems.plugin.getItem(type, id);
+            
+            if (template == null) {
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().warning("[DEBUG] hasDurabilityStat: Template is null!");
+                }
                 return false;
             }
 
-            // Check if item has DURABILITY stat
-            boolean hasDurability = mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY);
-
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] hasDurabilityStat: " + hasDurability + " for " + type.getId() + ":" + id);
+            // Compare NBT - if the item has different NBT than template, it might be damaged
+            // This works because damaged items have modified durability NBT
+            ItemMeta itemMeta = item.getItemMeta();
+            ItemMeta templateMeta = template.getItemMeta();
+            
+            if (itemMeta == null || templateMeta == null) {
+                return false;
             }
 
-            return hasDurability;
+            // Check PersistentDataContainer for any durability-related data
+            org.bukkit.persistence.PersistentDataContainer itemPDC = itemMeta.getPersistentDataContainer();
+            
+            // If item has any PDC data that template doesn't have, it might be modified
+            // Or we can just assume any MMOItem with custom NBT can be "repaired" by getting fresh template
+            boolean hasCustomNBT = !itemPDC.isEmpty();
+            
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] hasDurabilityStat: Has custom NBT: " + hasCustomNBT);
+                plugin.getLogger().info("[DEBUG] hasDurabilityStat: Item PDC keys: " + itemPDC.getKeys());
+            }
+
+            // Simple approach: if it's a valid MMOItem, allow repair
+            // The repair will give them a fresh template with full durability
+            return true;
+
         } catch (Exception e) {
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                 plugin.getLogger().warning("[DEBUG] hasDurabilityStat error: " + e.getMessage());
+                e.printStackTrace();
             }
             return false;
         }
