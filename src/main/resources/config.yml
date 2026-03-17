@@ -2,7 +2,7 @@
 # #                    OmniRepair Configuration                     #
 # #     "Repair Vanilla & RPG Items Safely. MMOItems Supported."    #
 # ╚════════════════════════════════════════════════════════════════╝
-s
+
 settings:
   # Enable debug mode (shows detailed console messages)
   debug: false
