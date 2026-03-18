@@ -508,8 +508,8 @@ public class MMOItemsHook {
                             
                             // Alternative: Check if item type has durability by trying to read NBT
                             // Some MMOItems have durability but don't report it via hasData()
-                            double nbtCurrent = readDurabilityFromNBT(item);
-                            double nbtMax = readMaxDurabilityFromNBT(item);
+                            nbtCurrent = readDurabilityFromNBT(item);
+                            nbtMax = readMaxDurabilityFromNBT(item);
                             
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                                 plugin.getLogger().info("[DEBUG] Method 4 - NBT durability: " + nbtCurrent + " / " + nbtMax);
