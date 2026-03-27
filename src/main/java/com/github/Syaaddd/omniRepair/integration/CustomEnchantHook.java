@@ -485,23 +485,9 @@ public class CustomEnchantHook {
                         if (plugin.getConfig().getBoolean("settings.debug", false)) {
                             plugin.getLogger().info("[DEBUG] Copied PDC key (DOUBLE): " + key + " = " + value);
                         }
-                    } else if (sourceContainer.has(key, PersistentDataType.LIST)) {
-                        // For list types, we need to use raw compound
-                        // This handles complex enchant data structures
-                        targetContainer.set(key, PersistentDataType.LIST, sourceContainer.get(key, PersistentDataType.LIST));
-                        hasCopied = true;
-                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                            plugin.getLogger().info("[DEBUG] Copied PDC key (LIST): " + key);
-                        }
-                    } else if (sourceContainer.has(key, PersistentDataType.TAG_CONTAINER)) {
-                        // For compound tag types
-                        targetContainer.set(key, PersistentDataType.TAG_CONTAINER, sourceContainer.get(key, PersistentDataType.TAG_CONTAINER));
-                        hasCopied = true;
-                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                            plugin.getLogger().info("[DEBUG] Copied PDC key (TAG_CONTAINER): " + key);
-                        }
                     } else {
-                        // Try to get as byte array (fallback)
+                        // Try to get as byte array (fallback for complex types like LIST, TAG_CONTAINER, etc.)
+                        // This handles all other data types including complex enchant structures
                         byte[] value = sourceContainer.get(key, PersistentDataType.BYTE_ARRAY);
                         if (value != null) {
                             targetContainer.set(key, PersistentDataType.BYTE_ARRAY, value);

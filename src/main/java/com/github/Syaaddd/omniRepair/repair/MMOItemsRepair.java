@@ -168,7 +168,19 @@ public class MMOItemsRepair extends RepairHandler {
 
                 // Copy other meta attributes (flags, etc.)
                 repairedMeta.setAttributeModifiers(originalMeta.getAttributeModifiers());
-                repairedMeta.setItemFlags(originalMeta.getItemFlags());
+
+                // Copy item flags if the meta supports it
+                if (repairedMeta instanceof org.bukkit.inventory.meta.Damageable || 
+                    repairedMeta.getClass().getSimpleName().contains("Meta")) {
+                    try {
+                        java.lang.reflect.Method setItemFlagsMethod = repairedMeta.getClass().getMethod("setItemFlags", java.util.Set.class);
+                        if (setItemFlagsMethod != null) {
+                            setItemFlagsMethod.invoke(repairedMeta, originalMeta.getItemFlags());
+                        }
+                    } catch (Exception e) {
+                        // Ignore if setItemFlags is not available
+                    }
+                }
 
                 repairedItem.setItemMeta(repairedMeta);
             }

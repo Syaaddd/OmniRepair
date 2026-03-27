@@ -1,0 +1,35 @@
+@REM ----------------------------------------------------------------------------
+@REM Licensed to the Apache Software Foundation (ASF) under one
+@REM or more contributor license agreements.  See the NOTICE file
+@REM distributed with this work for additional information
+@REM regarding copyright ownership.  The ASF licenses this file
+@REM to you under the Apache License, Version 2.0 (the
+@REM "License"); you may not use this file except in compliance
+@REM with the License.  You may obtain a copy of the License at
+@REM
+@REM    http://www.apache.org/licenses/LICENSE-2.0
+@REM
+@REM Unless required by applicable law or agreed to in writing,
+@REM software distributed under the License is distributed on an
+@REM "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+@REM KIND, either express or implied.  See the License for the
+@REM specific language governing permissions and limitations
+@REM under the License.
+@REM ----------------------------------------------------------------------------
+
+@echo off
+setlocal
+set MAVEN_PROJECTBASEDIR=%~dp0
+set WRAPPER_JAR=%MAVEN_PROJECTBASEDIR%.mvn\wrapper\maven-wrapper.jar
+set WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
+
+if "%JAVA_HOME%"=="" (
+    for /f "delims=" %%i in ('powershell -Command "$x = (Get-ChildItem 'C:\Program Files' -Recurse -Filter 'javac.exe' -ErrorAction SilentlyContinue | Select-Object -First 1); if($x) { $x.Directory.Parent.FullName }"') do set JAVA_HOME=%%i
+)
+
+if not "%JAVA_HOME%"=="" (
+    "%JAVA_HOME%\bin\java" -cp "%WRAPPER_JAR%" "-Dmaven.multiModuleProjectDirectory=%MAVEN_PROJECTBASEDIR%" %WRAPPER_LAUNCHER% %*
+) else (
+    echo JAVA_HOME not set and could not be found automatically.
+    exit /b 1
+)
