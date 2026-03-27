@@ -15,6 +15,7 @@ import java.util.Map;
 /**
  * Handles repair for MMOItems custom items.
  * Uses MMOItems plugin.getItem() to get fresh template and copy enchantments.
+ * Also preserves custom enchantments from AdvancedEnchantments and other plugins.
  */
 public class MMOItemsRepair extends RepairHandler {
 
@@ -129,7 +130,7 @@ public class MMOItemsRepair extends RepairHandler {
             ItemMeta repairedMeta = repairedItem.getItemMeta();
 
             if (originalMeta != null && repairedMeta != null) {
-                // Copy all enchantments
+                // Copy all vanilla enchantments
                 for (Map.Entry<Enchantment, Integer> entry : originalMeta.getEnchants().entrySet()) {
                     Enchantment enchant = entry.getKey();
                     int level = entry.getValue();
@@ -142,6 +143,24 @@ public class MMOItemsRepair extends RepairHandler {
                 }
 
                 repairedItem.setItemMeta(repairedMeta);
+            }
+
+            // Copy custom enchantments from AdvancedEnchantments and other custom enchant plugins
+            if (plugin.getCustomEnchantHook() != null && plugin.getCustomEnchantHook().isEnabled()) {
+                try {
+                    boolean customEnchantsCopied = plugin.getCustomEnchantHook().copyCustomEnchantments(item, repairedItem);
+                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                        if (customEnchantsCopied) {
+                            plugin.getLogger().info("[DEBUG] Custom enchantments copied successfully");
+                        } else {
+                            plugin.getLogger().info("[DEBUG] No custom enchantments to copy");
+                        }
+                    }
+                } catch (Exception e) {
+                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                        plugin.getLogger().warning("[DEBUG] Error copying custom enchantments: " + e.getMessage());
+                    }
+                }
             }
 
             if (plugin.getConfig().getBoolean("settings.debug", false)) {

@@ -42,7 +42,7 @@ public class NBTProtection {
     /**
      * Verify that NBT data is preserved after an operation.
      * This is a safety check to ensure no data was lost.
-     * 
+     *
      * @param original The original item
      * @param modified The modified item
      * @return true if NBT appears to be preserved, false if data may be lost
@@ -104,6 +104,21 @@ public class NBTProtection {
                 if (originalData != modifiedData) {
                     plugin.getLogger().warning("NBT verification failed: Custom model data changed");
                     return false;
+                }
+            }
+
+            // Verify custom enchantments are preserved (AdvancedEnchantments, etc.)
+            if (plugin.getCustomEnchantHook() != null && plugin.getCustomEnchantHook().isEnabled()) {
+                boolean originalHasCustom = plugin.getCustomEnchantHook().hasCustomEnchantments(original);
+                boolean modifiedHasCustom = plugin.getCustomEnchantHook().hasCustomEnchantments(modified);
+
+                if (originalHasCustom && !modifiedHasCustom) {
+                    plugin.getLogger().warning("NBT verification failed: Custom enchantments were lost!");
+                    return false;
+                }
+
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] Custom enchant verification: Original=" + originalHasCustom + ", Modified=" + modifiedHasCustom);
                 }
             }
 

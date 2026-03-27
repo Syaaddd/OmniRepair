@@ -5,6 +5,7 @@ import com.github.Syaaddd.omniRepair.economy.EconomyHandler;
 import com.github.Syaaddd.omniRepair.gui.GUIManager;
 import com.github.Syaaddd.omniRepair.integration.MMOItemsHook;
 import com.github.Syaaddd.omniRepair.integration.VaultHook;
+import com.github.Syaaddd.omniRepair.integration.CustomEnchantHook;
 import com.github.Syaaddd.omniRepair.listeners.GUIListener;
 import com.github.Syaaddd.omniRepair.listeners.RepairListener;
 import com.github.Syaaddd.omniRepair.repair.MMOItemsRepair;
@@ -32,6 +33,7 @@ public final class OmniRepair extends JavaPlugin {
     // Integration hooks
     private MMOItemsHook mmoItemsHook;
     private VaultHook vaultHook;
+    private CustomEnchantHook customEnchantHook;
 
     // Utility classes
     private ItemUtils itemUtils;
@@ -100,6 +102,7 @@ public final class OmniRepair extends JavaPlugin {
         getLogger().info("✓ OmniRepair enabled successfully!");
         getLogger().info("  - Economy: " + (economyHandler.isUsingEconomy() ? "Enabled" : "Disabled"));
         getLogger().info("  - MMOItems: " + (mmoItemsHook.isEnabled() ? "Enabled" : "Disabled"));
+        getLogger().info("  - AdvancedEnchantments: " + (customEnchantHook.isEnabled() ? "Enabled" : "Disabled"));
         getLogger().info("  - Vault: " + (vaultHook.isEnabled() ? "Enabled" : "Disabled"));
         getLogger().info("  - Use /repair to open the GUI");
         getLogger().info("╚════════════════════════════════════════════════════════════════╝");
@@ -122,6 +125,7 @@ public final class OmniRepair extends JavaPlugin {
     private void initializeHooks() {
         mmoItemsHook = new MMOItemsHook(this);
         vaultHook = new VaultHook(this);
+        customEnchantHook = new CustomEnchantHook(this);
     }
 
     /**
@@ -245,6 +249,13 @@ public final class OmniRepair extends JavaPlugin {
      */
     public VaultHook getVaultHook() {
         return vaultHook;
+    }
+
+    /**
+     * Get the AdvancedEnchantments integration hook.
+     */
+    public CustomEnchantHook getCustomEnchantHook() {
+        return customEnchantHook;
     }
 
     /**

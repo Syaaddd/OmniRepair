@@ -84,6 +84,24 @@ public class VanillaRepair extends RepairHandler {
                 result.setItemMeta(meta);
             }
 
+            // Copy custom enchantments from AdvancedEnchantments and other custom enchant plugins
+            if (plugin.getCustomEnchantHook() != null && plugin.getCustomEnchantHook().isEnabled()) {
+                try {
+                    boolean customEnchantsCopied = plugin.getCustomEnchantHook().copyCustomEnchantments(item, result);
+                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                        if (customEnchantsCopied) {
+                            plugin.getLogger().info("[DEBUG] Custom enchantments copied successfully");
+                        } else {
+                            plugin.getLogger().info("[DEBUG] No custom enchantments to copy");
+                        }
+                    }
+                } catch (Exception e) {
+                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                        plugin.getLogger().warning("[DEBUG] Error copying custom enchantments: " + e.getMessage());
+                    }
+                }
+            }
+
             // Verify NBT was preserved
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                 nbtProtection.logVerification(original, result, "VanillaRepair");
