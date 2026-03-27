@@ -533,21 +533,12 @@ public class MMOItemsHook {
                                 return true;
                             }
 
-                            // Check if NBT shows unlimited durability (-1 or very high values)
-                            // MMOItems uses -1 for unlimited durability items
-                            if (nbtCurrent < 0 || nbtMax <= 0) {
-                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                    plugin.getLogger().info("[DEBUG] Method 4 - Unlimited durability item (NBT: " + nbtCurrent + "/" + nbtMax + "), NOT damaged");
-                                }
-                                return false;
-                            }
-
-                            // Final fallback: if it's a valid MMOItem but has no durability system,
-                            // we should NOT allow repair (item cannot be damaged)
+                            // Final fallback: if it's a valid MMOItem, allow repair attempt
+                            // This allows repair for all MMOItems including unlimited durability items
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                plugin.getLogger().info("[DEBUG] Method 4 - Valid MMOItem but no durability system, NOT damaged");
+                                plugin.getLogger().info("[DEBUG] Method 4 - Valid MMOItem, allowing repair attempt");
                             }
-                            return false;
+                            return true;
                         } else {
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                                 plugin.getLogger().info("[DEBUG] Method 4 - MMOItem object is null");
