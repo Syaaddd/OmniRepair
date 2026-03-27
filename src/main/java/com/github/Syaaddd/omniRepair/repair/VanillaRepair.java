@@ -77,14 +77,8 @@ public class VanillaRepair extends RepairHandler {
             ItemStack original = nbtProtection.cloneSafely(item);
             ItemStack result = nbtProtection.cloneSafely(item);
 
-            // Set damage to 0 (fully repaired)
-            ItemMeta meta = result.getItemMeta();
-            if (meta instanceof Damageable) {
-                ((Damageable) meta).setDamage(0);
-                result.setItemMeta(meta);
-            }
-
-            // Copy custom enchantments from AdvancedEnchantments and other custom enchant plugins
+            // Copy custom enchantments from AdvancedEnchantments and other custom enchant plugins FIRST
+            // This must be done BEFORE setting item meta to preserve NBT data
             if (plugin.getCustomEnchantHook() != null && plugin.getCustomEnchantHook().isEnabled()) {
                 try {
                     boolean customEnchantsCopied = plugin.getCustomEnchantHook().copyCustomEnchantments(item, result);
@@ -100,6 +94,13 @@ public class VanillaRepair extends RepairHandler {
                         plugin.getLogger().warning("[DEBUG] Error copying custom enchantments: " + e.getMessage());
                     }
                 }
+            }
+
+            // Set damage to 0 (fully repaired)
+            ItemMeta meta = result.getItemMeta();
+            if (meta instanceof Damageable) {
+                ((Damageable) meta).setDamage(0);
+                result.setItemMeta(meta);
             }
 
             // Verify NBT was preserved

@@ -125,27 +125,8 @@ public class MMOItemsRepair extends RepairHandler {
             // Clone the repaired item to avoid modifying template
             repairedItem = repairedItem.clone();
 
-            // Copy enchantments from original item to repaired item
-            ItemMeta originalMeta = item.getItemMeta();
-            ItemMeta repairedMeta = repairedItem.getItemMeta();
-
-            if (originalMeta != null && repairedMeta != null) {
-                // Copy all vanilla enchantments
-                for (Map.Entry<Enchantment, Integer> entry : originalMeta.getEnchants().entrySet()) {
-                    Enchantment enchant = entry.getKey();
-                    int level = entry.getValue();
-                    repairedMeta.addEnchant(enchant, level, true);
-                }
-
-                // Copy display name if custom
-                if (originalMeta.hasDisplayName()) {
-                    repairedMeta.setDisplayName(originalMeta.getDisplayName());
-                }
-
-                repairedItem.setItemMeta(repairedMeta);
-            }
-
-            // Copy custom enchantments from AdvancedEnchantments and other custom enchant plugins
+            // Copy custom enchantments from AdvancedEnchantments and other custom enchant plugins FIRST
+            // This must be done BEFORE setting item meta to preserve NBT data
             if (plugin.getCustomEnchantHook() != null && plugin.getCustomEnchantHook().isEnabled()) {
                 try {
                     boolean customEnchantsCopied = plugin.getCustomEnchantHook().copyCustomEnchantments(item, repairedItem);
@@ -161,6 +142,35 @@ public class MMOItemsRepair extends RepairHandler {
                         plugin.getLogger().warning("[DEBUG] Error copying custom enchantments: " + e.getMessage());
                     }
                 }
+            }
+
+            // Copy enchantments from original item to repaired item
+            ItemMeta originalMeta = item.getItemMeta();
+            ItemMeta repairedMeta = repairedItem.getItemMeta();
+
+            if (originalMeta != null && repairedMeta != null) {
+                // Copy all vanilla enchantments (keep existing ones from template)
+                for (Map.Entry<Enchantment, Integer> entry : originalMeta.getEnchants().entrySet()) {
+                    Enchantment enchant = entry.getKey();
+                    int level = entry.getValue();
+                    repairedMeta.addEnchant(enchant, level, true);
+                }
+
+                // Copy display name if custom
+                if (originalMeta.hasDisplayName()) {
+                    repairedMeta.setDisplayName(originalMeta.getDisplayName());
+                }
+
+                // Copy lore if custom
+                if (originalMeta.hasLore()) {
+                    repairedMeta.setLore(originalMeta.getLore());
+                }
+
+                // Copy other meta attributes (flags, etc.)
+                repairedMeta.setAttributeModifiers(originalMeta.getAttributeModifiers());
+                repairedMeta.setItemFlags(originalMeta.getItemFlags());
+
+                repairedItem.setItemMeta(repairedMeta);
             }
 
             if (plugin.getConfig().getBoolean("settings.debug", false)) {

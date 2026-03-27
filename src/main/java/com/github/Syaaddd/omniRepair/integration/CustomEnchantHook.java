@@ -431,6 +431,7 @@ public class CustomEnchantHook {
 
     /**
      * Copy custom enchantments from one item to another.
+     * Copies all PDC data from AdvancedEnchantments and similar plugins.
      *
      * @param source The source item to copy from
      * @param target The target item to copy to
@@ -441,12 +442,93 @@ public class CustomEnchantHook {
             return false;
         }
 
-        Map<String, Integer> enchantments = getCustomEnchantments(source);
-        if (enchantments.isEmpty()) {
+        try {
+            ItemMeta sourceMeta = source.getItemMeta();
+            ItemMeta targetMeta = target.getItemMeta();
+
+            if (sourceMeta == null || targetMeta == null) {
+                return false;
+            }
+
+            PersistentDataContainer sourceContainer = sourceMeta.getPersistentDataContainer();
+            PersistentDataContainer targetContainer = targetMeta.getPersistentDataContainer();
+
+            boolean hasCopied = false;
+
+            // Copy all PDC keys from source to target
+            // This preserves all custom enchant data from AdvancedEnchantments and similar plugins
+            for (NamespacedKey key : sourceContainer.getKeys()) {
+                String keyStr = key.getKey().toLowerCase();
+                String namespace = key.getNamespace().toLowerCase();
+
+                // Copy keys related to enchantments
+                if (keyStr.contains("enchant") || namespace.contains("advancedenchant") || namespace.contains("ae")) {
+                    // Copy the value based on its type
+                    if (sourceContainer.has(key, PersistentDataType.STRING)) {
+                        String value = sourceContainer.get(key, PersistentDataType.STRING);
+                        targetContainer.set(key, PersistentDataType.STRING, value);
+                        hasCopied = true;
+                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                            plugin.getLogger().info("[DEBUG] Copied PDC key (STRING): " + key + " = " + value);
+                        }
+                    } else if (sourceContainer.has(key, PersistentDataType.INTEGER)) {
+                        Integer value = sourceContainer.get(key, PersistentDataType.INTEGER);
+                        targetContainer.set(key, PersistentDataType.INTEGER, value);
+                        hasCopied = true;
+                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                            plugin.getLogger().info("[DEBUG] Copied PDC key (INTEGER): " + key + " = " + value);
+                        }
+                    } else if (sourceContainer.has(key, PersistentDataType.DOUBLE)) {
+                        Double value = sourceContainer.get(key, PersistentDataType.DOUBLE);
+                        targetContainer.set(key, PersistentDataType.DOUBLE, value);
+                        hasCopied = true;
+                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                            plugin.getLogger().info("[DEBUG] Copied PDC key (DOUBLE): " + key + " = " + value);
+                        }
+                    } else if (sourceContainer.has(key, PersistentDataType.LIST)) {
+                        // For list types, we need to use raw compound
+                        // This handles complex enchant data structures
+                        targetContainer.set(key, PersistentDataType.LIST, sourceContainer.get(key, PersistentDataType.LIST));
+                        hasCopied = true;
+                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                            plugin.getLogger().info("[DEBUG] Copied PDC key (LIST): " + key);
+                        }
+                    } else if (sourceContainer.has(key, PersistentDataType.TAG_CONTAINER)) {
+                        // For compound tag types
+                        targetContainer.set(key, PersistentDataType.TAG_CONTAINER, sourceContainer.get(key, PersistentDataType.TAG_CONTAINER));
+                        hasCopied = true;
+                        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                            plugin.getLogger().info("[DEBUG] Copied PDC key (TAG_CONTAINER): " + key);
+                        }
+                    } else {
+                        // Try to get as byte array (fallback)
+                        byte[] value = sourceContainer.get(key, PersistentDataType.BYTE_ARRAY);
+                        if (value != null) {
+                            targetContainer.set(key, PersistentDataType.BYTE_ARRAY, value);
+                            hasCopied = true;
+                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                plugin.getLogger().info("[DEBUG] Copied PDC key (BYTE_ARRAY): " + key);
+                            }
+                        }
+                    }
+                }
+            }
+
+            target.setItemMeta(targetMeta);
+
+            if (hasCopied && plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] Custom enchantments copied successfully via PDC");
+            }
+
+            return hasCopied;
+
+        } catch (Exception e) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("[DEBUG] Error copying custom enchantments: " + e.getMessage());
+                e.printStackTrace();
+            }
             return false;
         }
-
-        return applyCustomEnchantments(target, enchantments);
     }
 
     /**
