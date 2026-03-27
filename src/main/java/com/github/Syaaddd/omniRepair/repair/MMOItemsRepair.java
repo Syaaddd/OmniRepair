@@ -125,6 +125,14 @@ public class MMOItemsRepair extends RepairHandler {
             // Clone the repaired item to avoid modifying template
             repairedItem = repairedItem.clone();
 
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] MMOItems repair - Got fresh template from MMOItems");
+                plugin.getLogger().info("[DEBUG] MMOItems repair - Original item durability NBT: " + 
+                    getNBTDurability(item));
+                plugin.getLogger().info("[DEBUG] MMOItems repair - Repaired item durability NBT: " + 
+                    getNBTDurability(repairedItem));
+            }
+
             // Copy custom enchantments from AdvancedEnchantments and other custom enchant plugins FIRST
             // This must be done BEFORE setting item meta to preserve NBT data
             if (plugin.getCustomEnchantHook() != null && plugin.getCustomEnchantHook().isEnabled()) {
@@ -257,6 +265,34 @@ public class MMOItemsRepair extends RepairHandler {
         }
         Type type = MMOItems.getType(item);
         return type != null ? type.getId() : null;
+    }
+
+    /**
+     * Get durability value from NBT for debugging.
+     */
+    private String getNBTDurability(ItemStack item) {
+        try {
+            if (item == null || !item.hasItemMeta()) {
+                return "null";
+            }
+            org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+            org.bukkit.persistence.PersistentDataContainer pdc = meta.getPersistentDataContainer();
+            
+            // Try to read MMOItems durability keys
+            org.bukkit.NamespacedKey durabilityKey = new org.bukkit.NamespacedKey("mmoitems", "durability");
+            org.bukkit.NamespacedKey maxDurabilityKey = new org.bukkit.NamespacedKey("mmoitems", "max_durability");
+            
+            Double current = pdc.get(durabilityKey, org.bukkit.persistence.PersistentDataType.DOUBLE);
+            Double max = pdc.get(maxDurabilityKey, org.bukkit.persistence.PersistentDataType.DOUBLE);
+            
+            if (current != null && max != null) {
+                return current + " / " + max;
+            }
+            
+            return "not found in PDC";
+        } catch (Exception e) {
+            return "error: " + e.getMessage();
+        }
     }
 
     /**
