@@ -108,8 +108,12 @@ public class CustomEnchantHook {
                 for (Method method : pluginClass.getDeclaredMethods()) {
                     String methodName = method.getName().toLowerCase();
                     if (methodName.contains("enchant") || methodName.contains("api")) {
-                        method.setAccessible(true);
-                        plugin.getLogger().info("  ℹ Found potential method: " + method.getName());
+                        try {
+                            method.setAccessible(true);
+                            plugin.getLogger().info("  ℹ Found potential method: " + method.getName());
+                        } catch (NoClassDefFoundError e) {
+                            // Skip methods that reference missing classes (e.g., Vault Economy)
+                        }
                     }
                 }
 
@@ -141,28 +145,32 @@ public class CustomEnchantHook {
                 for (Method method : apiInstanceClass.getDeclaredMethods()) {
                     String methodName = method.getName().toLowerCase();
 
-                    if (methodName.contains("getenchantments") || methodName.contains("getenchants")) {
-                        getEnchantmentsMethod = method;
-                        getEnchantmentsMethod.setAccessible(true);
-                        plugin.getLogger().info("  ✓ Found getEnchantments method: " + method.getName());
-                    }
+                    try {
+                        if (methodName.contains("getenchantments") || methodName.contains("getenchants")) {
+                            getEnchantmentsMethod = method;
+                            getEnchantmentsMethod.setAccessible(true);
+                            plugin.getLogger().info("  ✓ Found getEnchantments method: " + method.getName());
+                        }
 
-                    if (methodName.contains("addenchantment") || methodName.contains("addenchant")) {
-                        addEnchantmentMethod = method;
-                        addEnchantmentMethod.setAccessible(true);
-                        plugin.getLogger().info("  ✓ Found addEnchantment method: " + method.getName());
-                    }
+                        if (methodName.contains("addenchantment") || methodName.contains("addenchant")) {
+                            addEnchantmentMethod = method;
+                            addEnchantmentMethod.setAccessible(true);
+                            plugin.getLogger().info("  ✓ Found addEnchantment method: " + method.getName());
+                        }
 
-                    if (methodName.contains("removeenchantment") || methodName.contains("removeenchant")) {
-                        removeEnchantmentMethod = method;
-                        removeEnchantmentMethod.setAccessible(true);
-                        plugin.getLogger().info("  ✓ Found removeEnchantment method: " + method.getName());
-                    }
+                        if (methodName.contains("removeenchantment") || methodName.contains("removeenchant")) {
+                            removeEnchantmentMethod = method;
+                            removeEnchantmentMethod.setAccessible(true);
+                            plugin.getLogger().info("  ✓ Found removeEnchantment method: " + method.getName());
+                        }
 
-                    if (methodName.contains("hasenchantment") || methodName.contains("hasenchant")) {
-                        hasEnchantmentMethod = method;
-                        hasEnchantmentMethod.setAccessible(true);
-                        plugin.getLogger().info("  ✓ Found hasEnchantment method: " + method.getName());
+                        if (methodName.contains("hasenchantment") || methodName.contains("hasenchant")) {
+                            hasEnchantmentMethod = method;
+                            hasEnchantmentMethod.setAccessible(true);
+                            plugin.getLogger().info("  ✓ Found hasEnchantment method: " + method.getName());
+                        }
+                    } catch (NoClassDefFoundError e) {
+                        // Skip methods that reference missing classes
                     }
                 }
             }
