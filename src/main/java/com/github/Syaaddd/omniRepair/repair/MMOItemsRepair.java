@@ -52,18 +52,26 @@ public class MMOItemsRepair extends RepairHandler {
             return false;
         }
 
-        // Check if item can be obtained from MMOItems (valid item)
+        // Check if item can be obtained from MMOItems (valid item) and has durability stat
         try {
             ItemStack template = net.Indyuce.mmoitems.MMOItems.plugin.getItem(type, id);
             if (template == null) {
                 return false;
             }
+
+            // Restrict to items that actually have a durability stat
+            net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem =
+                    net.Indyuce.mmoitems.MMOItems.plugin.getItems().getMMOItem(type, id);
+            if (mmoItem != null && !mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY)) {
+                // Also accept if the item already has durability stored in NBT
+                if (plugin.getMmoItemsHook().getDurability(item) < 0) {
+                    return false;
+                }
+            }
         } catch (Exception e) {
             return false;
         }
 
-        // It's a valid MMOItem - allow repair
-        // We don't check damage because some MMOItems don't use standard durability
         return true;
     }
 

@@ -11,8 +11,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Handles repair events and bulk repair operations.
@@ -30,31 +30,31 @@ public class RepairListener implements Listener {
      */
     public void performBulkRepair(Player player) {
         PlayerInventory inventory = player.getInventory();
-        List<ItemStack> itemsToRepair = new ArrayList<>();
-        List<ItemStack> repairedItems = new ArrayList<>();
-        
-        // Collect all damaged items
-        for (ItemStack item : inventory.getContents()) {
+        Map<Integer, ItemStack> slotsToRepair = new LinkedHashMap<>();
+
+        // Collect all damaged item slots (track slot index directly to avoid isSimilar mismatch)
+        for (int i = 0; i < inventory.getSize(); i++) {
+            ItemStack item = inventory.getItem(i);
             if (item != null && !item.getType().isAir() && plugin.getItemUtils().canRepair(item)) {
-                itemsToRepair.add(item);
+                slotsToRepair.put(i, item);
             }
         }
 
         // Check max bulk repair limit
         int maxBulkRepair = plugin.getConfig().getInt("settings.max-bulk-repair", 360);
-        if (itemsToRepair.size() > maxBulkRepair) {
+        if (slotsToRepair.size() > maxBulkRepair) {
             sendMessage(player, "&cToo many items to repair! Maximum: " + maxBulkRepair);
             return;
         }
 
-        if (itemsToRepair.isEmpty()) {
+        if (slotsToRepair.isEmpty()) {
             sendMessage(player, plugin.getMessages().getString("repair.no-items-to-repair"));
             return;
         }
 
         // Calculate total cost
         double totalCost = 0;
-        for (ItemStack item : itemsToRepair) {
+        for (ItemStack item : slotsToRepair.values()) {
             if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isMMOItem(item)) {
                 totalCost += plugin.getMmoItemsRepair().getRepairCost(item);
             } else {
@@ -70,11 +70,13 @@ public class RepairListener implements Listener {
             return;
         }
 
-        // Perform repairs
+        // Perform repairs - use tracked slot index to set item back to correct position
         int repairedCount = 0;
-        for (ItemStack item : itemsToRepair) {
+        for (Map.Entry<Integer, ItemStack> entry : slotsToRepair.entrySet()) {
+            int slot = entry.getKey();
+            ItemStack item = entry.getValue();
             ItemStack repairedItem = null;
-            
+
             if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isMMOItem(item)) {
                 repairedItem = plugin.getMmoItemsRepair().repair(item, player);
             } else {
@@ -82,13 +84,10 @@ public class RepairListener implements Listener {
             }
 
             if (repairedItem != null) {
-                // Replace the item in inventory
-                int slot = getInventorySlot(inventory, item);
-                if (slot >= 0) {
-                    inventory.setItem(slot, repairedItem);
-                    repairedItems.add(repairedItem);
-                    repairedCount++;
-                }
+                // Preserve original stack size (MMOItems fresh template defaults to 1)
+                repairedItem.setAmount(item.getAmount());
+                inventory.setItem(slot, repairedItem);
+                repairedCount++;
             }
         }
 
@@ -208,19 +207,6 @@ public class RepairListener implements Listener {
         }
 
         return false;
-    }
-
-    /**
-     * Get the inventory slot of an item.
-     */
-    private int getInventorySlot(PlayerInventory inventory, ItemStack target) {
-        for (int i = 0; i < inventory.getSize(); i++) {
-            ItemStack item = inventory.getItem(i);
-            if (item != null && item.isSimilar(target)) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     /**

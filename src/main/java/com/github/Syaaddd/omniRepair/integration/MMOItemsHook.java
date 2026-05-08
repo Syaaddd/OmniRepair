@@ -533,12 +533,11 @@ public class MMOItemsHook {
                                 return true;
                             }
 
-                            // Final fallback: if it's a valid MMOItem, allow repair attempt
-                            // This allows repair for all MMOItems including unlimited durability items
+                            // Item has no durability stat - non-durability items cannot be repaired
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                plugin.getLogger().info("[DEBUG] Method 4 - Valid MMOItem, allowing repair attempt");
+                                plugin.getLogger().info("[DEBUG] Method 4 - Valid MMOItem but no durability stat, denying repair");
                             }
-                            return true;
+                            return false;
                         } else {
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                                 plugin.getLogger().info("[DEBUG] Method 4 - MMOItem object is null");

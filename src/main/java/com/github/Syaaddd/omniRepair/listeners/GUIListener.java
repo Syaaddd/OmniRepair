@@ -67,10 +67,12 @@ public class GUIListener implements Listener {
      */
     private void handleRepairHandClick(Player player, RepairGUI gui) {
         ItemStack itemInHand = player.getInventory().getItemInMainHand();
+        boolean isOffHand = false;
 
         // Check if item in offhand if main hand is air
         if (itemInHand == null || itemInHand.getType().isAir()) {
             itemInHand = player.getInventory().getItemInOffHand();
+            isOffHand = true;
         }
 
         // Debug logging
@@ -200,8 +202,12 @@ public class GUIListener implements Listener {
             return;
         }
 
-        // Success!
-        player.getInventory().setItemInMainHand(repairedItem);
+        // Success! Set back to the hand the item came from
+        if (isOffHand) {
+            player.getInventory().setItemInOffHand(repairedItem);
+        } else {
+            player.getInventory().setItemInMainHand(repairedItem);
+        }
 
         // Play success effects
         playSuccessEffects(player, cost);
