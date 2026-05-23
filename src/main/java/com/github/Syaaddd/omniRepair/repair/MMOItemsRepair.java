@@ -5,11 +5,16 @@ import com.github.Syaaddd.omniRepair.utils.LoreUpdater;
 import com.github.Syaaddd.omniRepair.utils.NBTProtection;
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
+import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -177,13 +182,8 @@ public class MMOItemsRepair extends RepairHandler {
                     repairedMeta.setDisplayName(originalMeta.getDisplayName());
                 }
 
-                // Copy lore if custom
-                if (originalMeta.hasLore()) {
-                    repairedMeta.setLore(originalMeta.getLore());
-                }
-
-                // Copy other meta attributes (flags, etc.)
-                repairedMeta.setAttributeModifiers(originalMeta.getAttributeModifiers());
+                // Merge lore: keep template's fresh durability lines, add custom non-durability lines from original
+                repairedMeta.setLore(mergeLore(item, repairedItem));
 
                 // Copy item flags if the meta supports it
                 if (repairedMeta instanceof org.bukkit.inventory.meta.Damageable || 
@@ -201,12 +201,26 @@ public class MMOItemsRepair extends RepairHandler {
                 repairedItem.setItemMeta(repairedMeta);
             }
 
-            // Set durability to max using MMOItems API if available
-            // This ensures MMOItems durability is properly repaired
+            // Set durability to max using actual max durability from MMOItems API/NBT
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                 plugin.getLogger().info("[DEBUG] Attempting to set MMOItems durability to max...");
             }
             setMaxDurability(repairedItem, type, id);
+
+            // Update lore to reflect correct durability values
+            if (plugin.getConfig().getBoolean("mmoitems.sync-lore", true)) {
+                try {
+                    double current = plugin.getMmoItemsHook().getDurability(repairedItem);
+                    double max = plugin.getMmoItemsHook().getMaxDurability(repairedItem);
+                    if (current > 0 && max > 0) {
+                        repairedItem = loreUpdater.updateDurabilityLore(repairedItem, current, max);
+                    }
+                } catch (Exception e) {
+                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                        plugin.getLogger().warning("[DEBUG] Failed to update durability lore: " + e.getMessage());
+                    }
+                }
+            }
 
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                 plugin.getLogger().info("[DEBUG] MMOItems repair successful: " + type.getId() + ":" + id);
@@ -219,45 +233,6 @@ public class MMOItemsRepair extends RepairHandler {
                 e.printStackTrace();
             }
             return null;
-        }
-    }
-
-    /**
-     * Simple check if item is damaged using NBT durability values.
-     */
-    private boolean isItemDamaged(ItemStack item) {
-        try {
-            Type type = MMOItems.getType(item);
-            String id = MMOItems.getID(item);
-
-            if (type == null || id == null) {
-                return false;
-            }
-
-            // Get the template item
-            ItemStack template = MMOItems.plugin.getItem(type, id);
-            if (template == null) {
-                return false;
-            }
-
-            // Check if this item type has durability
-            net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem = 
-                MMOItems.plugin.getItems().getMMOItem(type, id);
-            
-            if (mmoItem == null || !mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY)) {
-                // No durability stat - can't determine damage
-                return false;
-            }
-
-            // Item has durability stat, assume it might be damaged
-            // The repair will work if durability is actually low
-            return true;
-
-        } catch (Exception e) {
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().warning("[DEBUG] isItemDamaged error: " + e.getMessage());
-            }
-            return false;
         }
     }
 
@@ -311,82 +286,117 @@ public class MMOItemsRepair extends RepairHandler {
     }
 
     /**
-     * Set durability to max using MMOItems API or reflection.
+     * Merge lore from original item and fresh template.
+     * Keeps fresh durability display lines from template,
+     * adds custom non-durability lines from original item.
+     */
+    private List<String> mergeLore(ItemStack original, ItemStack freshTemplate) {
+        List<String> durabilityPatterns = plugin.getConfig().getStringList("mmoitems.lore-patterns");
+        if (durabilityPatterns.isEmpty()) {
+            durabilityPatterns = List.of(".*Durability:.*", ".*Durability.*", ".*HP:.*");
+        }
+
+        List<String> originalLore = original.hasItemMeta() && original.getItemMeta().hasLore()
+                ? original.getItemMeta().getLore()
+                : new ArrayList<>();
+        List<String> templateLore = freshTemplate.hasItemMeta() && freshTemplate.getItemMeta().hasLore()
+                ? freshTemplate.getItemMeta().getLore()
+                : new ArrayList<>();
+
+        List<String> merged = new ArrayList<>();
+
+        // Start with fresh template lore (has correct durability display)
+        merged.addAll(templateLore);
+
+        // Add custom lines from original that are NOT durability-related
+        if (originalLore != null) {
+            for (String line : originalLore) {
+                boolean isDurabilityLine = false;
+                for (String pattern : durabilityPatterns) {
+                    if (line.toLowerCase().matches(pattern.toLowerCase())) {
+                        isDurabilityLine = true;
+                        break;
+                    }
+                }
+                if (!isDurabilityLine && !templateLore.contains(line)) {
+                    merged.add(line);
+                }
+            }
+        }
+
+        return merged;
+    }
+
+    /**
+     * Set durability to max using actual max durability from MMOItems API/NBT.
      */
     private void setMaxDurability(ItemStack item, Type type, String id) {
         try {
-            // Try to use MMOItems API to set durability
-            try {
-                // Get the MMOItem object
-                net.Indyuce.mmoitems.api.item.mmoitem.MMOItem mmoItem = 
-                    net.Indyuce.mmoitems.MMOItems.plugin.getItems().getMMOItem(type, id);
-                
-                if (mmoItem != null) {
-                    // Check if item has durability
-                    if (mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY)) {
-                        // MMOItems stores durability in NBT internally
-                        // We need to use their API to set it back to max
-                        // Try using reflection to call setDurability or similar
-                        try {
-                            // Try to find and call setDurability method via reflection
-                            java.lang.reflect.Method setDurabilityMethod = null;
-                            
-                            // Look for method in MMOItem class
-                            for (java.lang.reflect.Method m : mmoItem.getClass().getDeclaredMethods()) {
-                                if (m.getName().toLowerCase().contains("durability") || 
-                                    m.getName().toLowerCase().contains("set")) {
-                                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                        plugin.getLogger().info("[DEBUG] Found potential method: " + m.getName());
-                                    }
-                                }
-                            }
-                            
-                            // Alternative: Use MMOItems NBT modification
-                            // This is the most reliable way to set durability
-                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                plugin.getLogger().info("[DEBUG] Using NBT-based durability repair");
-                            }
-                            
-                            // Set durability via NBT compound
-                            org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
-                            if (meta != null) {
-                                org.bukkit.persistence.PersistentDataContainer pdc = meta.getPersistentDataContainer();
-                                
-                                // Get max durability from config/stat
-                                double maxDurability = 100.0; // Default fallback
-                                
-                                // Set durability to max in NBT
-                                org.bukkit.NamespacedKey durabilityKey = new org.bukkit.NamespacedKey("mmoitems", "durability");
-                                org.bukkit.NamespacedKey maxDurabilityKey = new org.bukkit.NamespacedKey("mmoitems", "max_durability");
-                                
-                                pdc.set(durabilityKey, org.bukkit.persistence.PersistentDataType.DOUBLE, maxDurability);
-                                pdc.set(maxDurabilityKey, org.bukkit.persistence.PersistentDataType.DOUBLE, maxDurability);
-                                
-                                meta.getPersistentDataContainer().set(durabilityKey, org.bukkit.persistence.PersistentDataType.DOUBLE, maxDurability);
-                                meta.getPersistentDataContainer().set(maxDurabilityKey, org.bukkit.persistence.PersistentDataType.DOUBLE, maxDurability);
-                                
-                                item.setItemMeta(meta);
-                                
-                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                    plugin.getLogger().info("[DEBUG] Set durability to max: " + maxDurability);
-                                }
-                            }
-                            
-                        } catch (Exception e) {
-                            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                plugin.getLogger().warning("[DEBUG] Failed to set durability via NBT: " + e.getMessage());
-                            }
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] setMaxDurability for " + type.getId() + ":" + id);
+            }
+
+            // 1. Try reading existing max durability from item's PDC (preserved from template)
+            double maxDurability = plugin.getMmoItemsHook().getMaxDurability(item);
+
+            // 2. Fallback: get fresh template lookup
+            if (maxDurability <= 0) {
+                ItemStack template = MMOItems.plugin.getItem(type, id);
+                if (template != null) {
+                    maxDurability = plugin.getMmoItemsHook().getMaxDurability(template);
+                }
+            }
+
+            // 3. Fallback: read directly from item's PDC keys
+            if (maxDurability <= 0) {
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                    NamespacedKey key = NamespacedKey.fromString("mmoitems:max_durability");
+                    if (key != null) {
+                        if (pdc.has(key, PersistentDataType.DOUBLE)) {
+                            maxDurability = pdc.get(key, PersistentDataType.DOUBLE);
+                        } else if (pdc.has(key, PersistentDataType.INTEGER)) {
+                            maxDurability = pdc.get(key, PersistentDataType.INTEGER).doubleValue();
                         }
                     }
                 }
-            } catch (Exception e) {
-                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                    plugin.getLogger().warning("[DEBUG] Failed to set MMOItems durability: " + e.getMessage());
-                }
             }
-        } catch (Exception e) {
+
+            if (maxDurability <= 0) {
+                plugin.getLogger().warning("Could not determine max durability for " + type.getId() + ":" + id + ", using 100.0");
+                maxDurability = 100.0;
+            }
+
+            // Set durability to max in NBT
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) return;
+
+            PersistentDataContainer pdc = meta.getPersistentDataContainer();
+            NamespacedKey durabilityKey = NamespacedKey.fromString("mmoitems:durability");
+            NamespacedKey maxDurabilityKey = NamespacedKey.fromString("mmoitems:max_durability");
+            NamespacedKey altCurrentKey = NamespacedKey.fromString("mmoitems:current_durability");
+
+            if (durabilityKey != null) {
+                pdc.set(durabilityKey, PersistentDataType.DOUBLE, maxDurability);
+            }
+            if (maxDurabilityKey != null) {
+                pdc.set(maxDurabilityKey, PersistentDataType.DOUBLE, maxDurability);
+            }
+            if (altCurrentKey != null) {
+                pdc.set(altCurrentKey, PersistentDataType.DOUBLE, maxDurability);
+            }
+
+            item.setItemMeta(meta);
+
             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().warning("[DEBUG] Error in setMaxDurability: " + e.getMessage());
+                plugin.getLogger().info("[DEBUG] Set MMOItems durability to max: " + maxDurability);
+            }
+
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error in setMaxDurability: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                e.printStackTrace();
             }
         }
     }

@@ -3,11 +3,10 @@ package com.github.Syaaddd.omniRepair.listeners;
 import com.github.Syaaddd.omniRepair.OmniRepair;
 import com.github.Syaaddd.omniRepair.repair.MMOItemsRepair;
 import com.github.Syaaddd.omniRepair.repair.VanillaRepair;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
@@ -17,7 +16,7 @@ import java.util.Map;
 /**
  * Handles repair events and bulk repair operations.
  */
-public class RepairListener implements Listener {
+public class RepairListener {
 
     private final OmniRepair plugin;
 
@@ -99,12 +98,16 @@ public class RepairListener implements Listener {
             if (plugin.getConfig().getBoolean("effects.sound.enabled", true)) {
                 String soundName = plugin.getConfig().getString("effects.sound.type", "BLOCK_ANVIL_USE");
                 try {
-                    Sound sound = Sound.valueOf(soundName);
-                    float volume = (float) plugin.getConfig().getDouble("effects.sound.volume", 1.0);
-                    float pitch = (float) plugin.getConfig().getDouble("effects.sound.pitch", 1.0);
-                    player.playSound(player.getLocation(), sound, volume, pitch);
-                } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid sound type: " + soundName);
+                    Sound sound = resolveSound(soundName);
+                    if (sound != null) {
+                        float volume = (float) plugin.getConfig().getDouble("effects.sound.volume", 1.0);
+                        float pitch = (float) plugin.getConfig().getDouble("effects.sound.pitch", 1.0);
+                        player.playSound(player.getLocation(), sound, volume, pitch);
+                    } else {
+                        plugin.getLogger().warning("Invalid sound type: " + soundName);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error playing sound " + soundName + ": " + e.getMessage());
                 }
             }
 
@@ -179,12 +182,16 @@ public class RepairListener implements Listener {
             if (plugin.getConfig().getBoolean("effects.sound.enabled", true)) {
                 String soundName = plugin.getConfig().getString("effects.sound.type", "BLOCK_ANVIL_USE");
                 try {
-                    Sound sound = Sound.valueOf(soundName);
-                    float volume = (float) plugin.getConfig().getDouble("effects.sound.volume", 1.0);
-                    float pitch = (float) plugin.getConfig().getDouble("effects.sound.pitch", 1.0);
-                    player.playSound(player.getLocation(), sound, volume, pitch);
-                } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid sound type: " + soundName);
+                    Sound sound = resolveSound(soundName);
+                    if (sound != null) {
+                        float volume = (float) plugin.getConfig().getDouble("effects.sound.volume", 1.0);
+                        float pitch = (float) plugin.getConfig().getDouble("effects.sound.pitch", 1.0);
+                        player.playSound(player.getLocation(), sound, volume, pitch);
+                    } else {
+                        plugin.getLogger().warning("Invalid sound type: " + soundName);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error playing sound " + soundName + ": " + e.getMessage());
                 }
             }
 
@@ -251,5 +258,25 @@ public class RepairListener implements Listener {
      */
     private String colorize(String text) {
         return plugin.getLoreUpdater().colorize(text);
+    }
+
+    /**
+     * Resolve a Sound by name, supporting both modern namespaced keys and legacy enum names.
+     */
+    private Sound resolveSound(String name) {
+        if (name == null || name.isEmpty()) return null;
+
+        String keyStr = name.contains(":") ? name : "minecraft:" + name.toLowerCase().replace('_', '.');
+        NamespacedKey key = NamespacedKey.fromString(keyStr);
+        if (key != null) {
+            Sound sound = Registry.SOUND_EVENT.get(key);
+            if (sound != null) return sound;
+        }
+
+        try {
+            return Sound.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

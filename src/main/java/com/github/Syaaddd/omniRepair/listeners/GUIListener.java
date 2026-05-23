@@ -2,6 +2,8 @@ package com.github.Syaaddd.omniRepair.listeners;
 
 import com.github.Syaaddd.omniRepair.OmniRepair;
 import com.github.Syaaddd.omniRepair.gui.RepairGUI;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -91,27 +93,7 @@ public class GUIListener implements Listener {
             return;
         }
 
-        // Check if item is damaged
-        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-            plugin.getLogger().info("[DEBUG] Checking if item is damaged...");
-            plugin.getLogger().info("[DEBUG] MMOItems Hook enabled: " + (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()));
-            plugin.getLogger().info("[DEBUG] isMMOItem result: " + (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isMMOItem(itemInHand)));
-        }
-
-        // Check if item is damaged using ItemUtils (handles both vanilla and MMOItems)
-        boolean isDamaged = plugin.getItemUtils().isDamaged(itemInHand);
-
-        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-            plugin.getLogger().info("[DEBUG] Final isDamaged result: " + isDamaged);
-        }
-
-        if (!isDamaged) {
-            sendMessage(player, plugin.getMessages().getString("repair.not-damaged"));
-            playErrorSound(player);
-            return;
-        }
-
-        // Check if item can be repaired (blacklist, soulbound, etc.)
+        // Check if item can be repaired (damaged, not blacklisted, not soulbound)
         boolean canRepair = plugin.getItemUtils().canRepair(itemInHand);
 
         if (plugin.getConfig().getBoolean("settings.debug", false)) {
@@ -124,8 +106,14 @@ public class GUIListener implements Listener {
             return;
         }
 
-        // Calculate repair cost
-        double cost = calculateRepairCost(itemInHand);
+        // Calculate repair cost using handler (consistent with repair logic)
+        double cost;
+        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()
+                && plugin.getMmoItemsHook().isMMOItem(itemInHand)) {
+            cost = plugin.getMmoItemsRepair().getRepairCost(itemInHand);
+        } else {
+            cost = plugin.getVanillaRepair().getRepairCost(itemInHand);
+        }
 
         if (plugin.getConfig().getBoolean("settings.debug", false)) {
             plugin.getLogger().info("[DEBUG] Repair cost: " + cost);
@@ -265,29 +253,6 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Calculate the repair cost for an item.
-     */
-    private double calculateRepairCost(ItemStack item) {
-        double damagePercent = plugin.getItemUtils().getDamagePercent(item);
-        if (damagePercent < 0) {
-            return 0;
-        }
-
-        double baseCost = damagePercent * plugin.getConfig().getDouble("settings.cost-per-percent", 10.0);
-
-        // Apply MMOItems multiplier
-        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isMMOItem(item)) {
-            baseCost *= plugin.getConfig().getDouble("mmoitems.custom-cost-multiplier", 1.5);
-        }
-
-        // Apply min/max
-        baseCost = Math.max(baseCost, plugin.getConfig().getDouble("settings.min-cost", 5.0));
-        baseCost = Math.min(baseCost, plugin.getConfig().getDouble("settings.max-cost", 5000.0));
-
-        return baseCost;
-    }
-
-    /**
      * Play success effects (sound, particles, action bar).
      */
     private void playSuccessEffects(Player player, double cost) {
@@ -295,12 +260,16 @@ public class GUIListener implements Listener {
         if (plugin.getConfig().getBoolean("effects.sound.enabled", true)) {
             String soundName = plugin.getConfig().getString("effects.sound.type", "BLOCK_ANVIL_USE");
             try {
-                Sound sound = Sound.valueOf(soundName);
-                float volume = (float) plugin.getConfig().getDouble("effects.sound.volume", 1.0);
-                float pitch = (float) plugin.getConfig().getDouble("effects.sound.pitch", 1.0);
-                player.playSound(player.getLocation(), sound, volume, pitch);
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid sound type: " + soundName);
+                Sound sound = resolveSound(soundName);
+                if (sound != null) {
+                    float volume = (float) plugin.getConfig().getDouble("effects.sound.volume", 1.0);
+                    float pitch = (float) plugin.getConfig().getDouble("effects.sound.pitch", 1.0);
+                    player.playSound(player.getLocation(), sound, volume, pitch);
+                } else {
+                    plugin.getLogger().warning("Invalid sound type: " + soundName);
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Error playing sound " + soundName + ": " + e.getMessage());
             }
         }
 
@@ -384,89 +353,24 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Check if an MMOItem has durability stat.
+     * Resolve a Sound by name, supporting both modern namespaced keys and legacy enum names.
      */
-    private boolean hasDurabilityStat(ItemStack item) {
-        try {
-            net.Indyuce.mmoitems.api.Type type = net.Indyuce.mmoitems.MMOItems.getType(item);
-            String id = net.Indyuce.mmoitems.MMOItems.getID(item);
+    private Sound resolveSound(String name) {
+        if (name == null || name.isEmpty()) return null;
 
-            if (type == null || id == null) {
-                return false;
-            }
-
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] hasDurabilityStat: Checking " + type.getId() + ":" + id);
-            }
-
-            // Get the template item from MMOItems
-            ItemStack template = net.Indyuce.mmoitems.MMOItems.plugin.getItem(type, id);
-            
-            if (template == null) {
-                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                    plugin.getLogger().warning("[DEBUG] hasDurabilityStat: Template is null!");
-                }
-                return false;
-            }
-
-            // Compare NBT - if the item has different NBT than template, it might be damaged
-            // This works because damaged items have modified durability NBT
-            ItemMeta itemMeta = item.getItemMeta();
-            ItemMeta templateMeta = template.getItemMeta();
-            
-            if (itemMeta == null || templateMeta == null) {
-                return false;
-            }
-
-            // Check PersistentDataContainer for any durability-related data
-            org.bukkit.persistence.PersistentDataContainer itemPDC = itemMeta.getPersistentDataContainer();
-            
-            // If item has any PDC data that template doesn't have, it might be modified
-            // Or we can just assume any MMOItem with custom NBT can be "repaired" by getting fresh template
-            boolean hasCustomNBT = !itemPDC.isEmpty();
-            
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] hasDurabilityStat: Has custom NBT: " + hasCustomNBT);
-                plugin.getLogger().info("[DEBUG] hasDurabilityStat: Item PDC keys: " + itemPDC.getKeys());
-            }
-
-            // Simple approach: if it's a valid MMOItem, allow repair
-            // The repair will give them a fresh template with full durability
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] hasDurabilityStat: Valid MMOItem, allowing repair");
-            }
-            return true;
-
-        } catch (Exception e) {
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().warning("[DEBUG] hasDurabilityStat error: " + e.getMessage());
-                e.printStackTrace();
-            }
-            return false;
+        // Try modern registry lookup (e.g. "minecraft:block.anvil.use")
+        String keyStr = name.contains(":") ? name : "minecraft:" + name.toLowerCase().replace('_', '.');
+        NamespacedKey key = NamespacedKey.fromString(keyStr);
+        if (key != null) {
+            Sound sound = Registry.SOUND_EVENT.get(key);
+            if (sound != null) return sound;
         }
-    }
 
-    /**
-     * Check if an MMOItem is blacklisted.
-     */
-    private boolean isBlacklisted(ItemStack item) {
+        // Fallback to legacy enum lookup (e.g. "BLOCK_ANVIL_USE")
         try {
-            String id = net.Indyuce.mmoitems.MMOItems.getID(item);
-            if (id == null) {
-                return false;
-            }
-
-            // Check MMOItems ID blacklist from config
-            java.util.List<String> blacklist = plugin.getConfig().getStringList("blacklist.mmoitems-ids");
-            for (String blacklistedId : blacklist) {
-                if (blacklistedId.equalsIgnoreCase(id)) {
-                    return true;
-                }
-            }
-
-            return false;
-        } catch (Exception e) {
-            return false;
+            return Sound.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 }

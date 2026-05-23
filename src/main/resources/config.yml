@@ -40,8 +40,6 @@ blacklist:
     - END_PORTAL_FRAME
     - ENCHANTED_GOLDEN_APPLE
     - TOTEM_OF_UNDYING
-    - ELYTRA
-    - TRIDENT
   
   # Items with specific lore (case-insensitive)
   lore-contains:

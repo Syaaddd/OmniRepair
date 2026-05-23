@@ -167,7 +167,6 @@ public final class OmniRepair extends JavaPlugin {
         repairListener = new RepairListener(this);
 
         getServer().getPluginManager().registerEvents(guiListener, this);
-        getServer().getPluginManager().registerEvents(repairListener, this);
 
         getLogger().info("✓ Listeners registered");
     }

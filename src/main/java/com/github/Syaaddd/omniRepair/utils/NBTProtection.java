@@ -1,9 +1,14 @@
 package com.github.Syaaddd.omniRepair.utils;
 
 import com.github.Syaaddd.omniRepair.OmniRepair;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+
+import java.util.List;
 
 /**
  * Utility class for NBT protection and item cloning.
@@ -41,11 +46,8 @@ public class NBTProtection {
 
     /**
      * Verify that NBT data is preserved after an operation.
-     * This is a safety check to ensure no data was lost.
-     *
-     * @param original The original item
-     * @param modified The modified item
-     * @return true if NBT appears to be preserved, false if data may be lost
+     * Checks type, amount, enchantments, display name, lore, custom model data,
+     * PDC keys, and custom enchantments.
      */
     public boolean verifyNBT(ItemStack original, ItemStack modified) {
         if (original == null || modified == null) {
@@ -55,10 +57,12 @@ public class NBTProtection {
         try {
             // Check basic properties
             if (original.getType() != modified.getType()) {
+                plugin.getLogger().warning("NBT verification failed: Item type changed");
                 return false;
             }
 
             if (original.getAmount() != modified.getAmount()) {
+                plugin.getLogger().warning("NBT verification failed: Item amount changed");
                 return false;
             }
 
@@ -70,6 +74,12 @@ public class NBTProtection {
 
             if (!original.hasItemMeta()) {
                 return true; // No meta to verify
+            }
+
+            ItemMeta originalMeta = original.getItemMeta();
+            ItemMeta modifiedMeta = modified.getItemMeta();
+            if (originalMeta == null || modifiedMeta == null) {
+                return false;
             }
 
             // Verify enchantments are preserved
@@ -87,22 +97,51 @@ public class NBTProtection {
             }
 
             // Verify display name is preserved
-            if (original.getItemMeta().hasDisplayName() != modified.getItemMeta().hasDisplayName()) {
+            if (originalMeta.hasDisplayName() != modifiedMeta.hasDisplayName()) {
                 plugin.getLogger().warning("NBT verification failed: Display name presence changed");
                 return false;
             }
-
-            // Verify custom model data is preserved
-            if (original.getItemMeta().hasCustomModelData() != modified.getItemMeta().hasCustomModelData()) {
-                plugin.getLogger().warning("NBT verification failed: Custom model data presence changed");
+            if (originalMeta.hasDisplayName() && !originalMeta.getDisplayName().equals(modifiedMeta.getDisplayName())) {
+                plugin.getLogger().warning("NBT verification failed: Display name changed");
                 return false;
             }
 
-            if (original.getItemMeta().hasCustomModelData()) {
-                int originalData = original.getItemMeta().getCustomModelData();
-                int modifiedData = modified.getItemMeta().getCustomModelData();
-                if (originalData != modifiedData) {
-                    plugin.getLogger().warning("NBT verification failed: Custom model data changed");
+            // Verify lore is preserved
+            List<String> originalLore = originalMeta.getLore();
+            List<String> modifiedLore = modifiedMeta.getLore();
+            if ((originalLore == null || originalLore.isEmpty()) != (modifiedLore == null || modifiedLore.isEmpty())) {
+                plugin.getLogger().warning("NBT verification failed: Lore presence changed");
+                return false;
+            }
+            if (originalLore != null && modifiedLore != null && !originalLore.equals(modifiedLore)) {
+                // Only warn for lore changes (some handlers legitimately update durability lore)
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] NBT verification: Lore content changed (may be intentional)");
+                }
+            }
+
+            // Verify custom model data is preserved
+            if (originalMeta.hasCustomModelData() != modifiedMeta.hasCustomModelData()) {
+                plugin.getLogger().warning("NBT verification failed: Custom model data presence changed");
+                return false;
+            }
+            if (originalMeta.hasCustomModelData() && originalMeta.getCustomModelData() != modifiedMeta.getCustomModelData()) {
+                plugin.getLogger().warning("NBT verification failed: Custom model data changed");
+                return false;
+            }
+
+            // Verify PersistentDataContainer keys are preserved
+            PersistentDataContainer originalPDC = originalMeta.getPersistentDataContainer();
+            PersistentDataContainer modifiedPDC = modifiedMeta.getPersistentDataContainer();
+
+            for (NamespacedKey key : originalPDC.getKeys()) {
+                boolean hasKey = modifiedPDC.has(key, PersistentDataType.STRING)
+                    || modifiedPDC.has(key, PersistentDataType.INTEGER)
+                    || modifiedPDC.has(key, PersistentDataType.DOUBLE)
+                    || modifiedPDC.has(key, PersistentDataType.LONG)
+                    || modifiedPDC.has(key, PersistentDataType.BYTE_ARRAY);
+                if (!hasKey) {
+                    plugin.getLogger().warning("NBT verification failed: PDC key '" + key + "' missing from modified item");
                     return false;
                 }
             }

@@ -110,13 +110,9 @@ public class MMOItemsHook {
      * Initialize NBT keys for MMOItems durability.
      */
     private void initializeNBTKeys() {
-        try {
-            // Common MMOItems NBT keys
-            durabilityKey = new NamespacedKey("mmoitems", "durability");
-            maxDurabilityKey = new NamespacedKey("mmoitems", "max_durability");
-        } catch (Exception e) {
-            plugin.getLogger().warning("  ⚠ Could not initialize NBT keys: " + e.getMessage());
-        }
+        // Common MMOItems NBT keys using modern API
+        durabilityKey = NamespacedKey.fromString("mmoitems:durability");
+        maxDurabilityKey = NamespacedKey.fromString("mmoitems:max_durability");
     }
 
     /**
@@ -243,8 +239,8 @@ public class MMOItemsHook {
             }
 
             // Try alternative key names
-            NamespacedKey altKey = new NamespacedKey("mmoitems", "current_durability");
-            if (container.has(altKey, PersistentDataType.DOUBLE)) {
+            NamespacedKey altKey = NamespacedKey.fromString("mmoitems:current_durability");
+            if (altKey != null && container.has(altKey, PersistentDataType.DOUBLE)) {
                 return container.get(altKey, PersistentDataType.DOUBLE);
             }
 
@@ -275,8 +271,8 @@ public class MMOItemsHook {
             }
 
             // Try alternative key names
-            NamespacedKey altKey = new NamespacedKey("mmoitems", "max_hp");
-            if (container.has(altKey, PersistentDataType.DOUBLE)) {
+            NamespacedKey altKey = NamespacedKey.fromString("mmoitems:max_hp");
+            if (altKey != null && container.has(altKey, PersistentDataType.DOUBLE)) {
                 return container.get(altKey, PersistentDataType.DOUBLE);
             }
 
@@ -337,8 +333,10 @@ public class MMOItemsHook {
             container.set(durabilityKey, PersistentDataType.DOUBLE, maxDurability);
 
             // Also update alternative keys for compatibility
-            NamespacedKey altKey = new NamespacedKey("mmoitems", "current_durability");
-            container.set(altKey, PersistentDataType.DOUBLE, maxDurability);
+            NamespacedKey altKey = NamespacedKey.fromString("mmoitems:current_durability");
+            if (altKey != null) {
+                container.set(altKey, PersistentDataType.DOUBLE, maxDurability);
+            }
 
             item.setItemMeta(meta);
 
@@ -420,25 +418,46 @@ public class MMOItemsHook {
             try {
                 ItemMeta meta = item.getItemMeta();
                 if (meta != null) {
+                    PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                    
                     if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                        plugin.getLogger().info("[DEBUG] Method 3 (NBT Compound) - Checking meta...");
-                        plugin.getLogger().info("[DEBUG] Method 3 - PDC keys: " + meta.getPersistentDataContainer().getKeys());
+                        plugin.getLogger().info("[DEBUG] Method 3 (NBT Compound) - Checking PDC keys: " + pdc.getKeys());
                     }
                     
-                    // Check for common durability-related NBT tags in PDC
-                    org.bukkit.persistence.PersistentDataContainer pdc = meta.getPersistentDataContainer();
-                    
-                    for (org.bukkit.NamespacedKey key : pdc.getKeys()) {
+                    for (NamespacedKey key : pdc.getKeys()) {
+                        String keyName = key.getKey().toLowerCase();
+                        
                         if (plugin.getConfig().getBoolean("settings.debug", false)) {
                             plugin.getLogger().info("[DEBUG] Method 3 - Found key: " + key);
                         }
                         
-                        if (key.getKey().toLowerCase().contains("durability") || 
-                            key.getKey().toLowerCase().contains("hp") ||
-                            key.getKey().toLowerCase().contains("health")) {
+                        if (keyName.contains("durability") || 
+                            keyName.contains("hp") ||
+                            keyName.contains("health")) {
                             
+                            // Try to read actual durability value instead of assuming damaged
+                            Double currentVal = null;
+                            if (pdc.has(key, PersistentDataType.DOUBLE)) {
+                                currentVal = pdc.get(key, PersistentDataType.DOUBLE);
+                            } else if (pdc.has(key, PersistentDataType.INTEGER)) {
+                                currentVal = pdc.get(key, PersistentDataType.INTEGER).doubleValue();
+                            }
+                            
+                            if (currentVal != null && currentVal >= 0) {
+                                double maxDurability = getMaxDurability(item);
+                                if (maxDurability > 0) {
+                                    boolean damaged = currentVal < maxDurability;
+                                    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                        plugin.getLogger().info("[DEBUG] Method 3 Result: " + damaged +
+                                            " (current=" + currentVal + ", max=" + maxDurability + ")");
+                                    }
+                                    return damaged;
+                                }
+                            }
+                            
+                            // Found key but couldn't read value - assume damaged as fallback
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                plugin.getLogger().info("[DEBUG] Method 3 Result: Found durability key, assuming damaged");
+                                plugin.getLogger().info("[DEBUG] Method 3 Result: Found durability key but couldn't read value, assuming damaged");
                             }
                             return true;
                         }
