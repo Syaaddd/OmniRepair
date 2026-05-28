@@ -21,56 +21,74 @@ public class ItemUtils {
         this.plugin = plugin;
     }
 
-    /**
-     * Check if an item is damaged (vanilla or MMOItems).
-     */
-    public boolean isDamaged(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR) {
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] isDamaged: item is null or air");
-            }
-            return false;
-        }
-
-        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-            plugin.getLogger().info("[DEBUG] isDamaged: Checking item " + item.getType().name());
-        }
-
-        // Check MMOItems durability FIRST (higher priority for RPG items)
-        if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()) {
-            // Check if it's an MMOItem first
-            if (plugin.getMmoItemsHook().isMMOItem(item)) {
-                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                    plugin.getLogger().info("[DEBUG] isDamaged: Item is MMOItem, checking MMOItems hook");
-                }
-                
-                boolean isDamaged = plugin.getMmoItemsHook().isDamaged(item);
-                
-                if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                    String mmoId = net.Indyuce.mmoitems.MMOItems.getID(item);
-                    double current = plugin.getMmoItemsHook().getDurability(item);
-                    double max = plugin.getMmoItemsHook().getMaxDurability(item);
-                    plugin.getLogger().info("[DEBUG] MMOItem Check - ID: " + mmoId + 
-                        ", Current: " + current + ", Max: " + max + ", IsDamaged: " + isDamaged);
-                }
-                
-                return isDamaged;
-            }
-        }
-
-        // Check vanilla durability for non-MMOItems
-        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-            plugin.getLogger().info("[DEBUG] isDamaged: Checking vanilla damage for " + item.getType().name());
-        }
-        
-        boolean vanillaDamaged = hasVanillaDamage(item);
-        
-        if (plugin.getConfig().getBoolean("settings.debug", false)) {
-            plugin.getLogger().info("[DEBUG] Vanilla item damage check: " + vanillaDamaged + " for " + item.getType().name());
-        }
-        
-        return vanillaDamaged;
+/**
+ * Check if an item can have durability (is damageable).
+ */
+public boolean isDamageable(ItemStack item) {
+    if (item == null || item.getType() == Material.AIR) {
+        return false;
     }
+    return getMaxVanillaDurability(item.getType()) > 0;
+}
+
+/**
+ * Check if an item is damaged (vanilla or MMOItems).
+ */
+public boolean isDamaged(ItemStack item) {
+    if (item == null || item.getType() == Material.AIR) {
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] isDamaged: item is null or air");
+        }
+        return false;
+    }
+
+    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+        plugin.getLogger().info("[DEBUG] isDamaged: Checking item " + item.getType().name());
+    }
+
+    // Check MMOItems durability FIRST (higher priority for RPG items)
+    if (plugin.getMmoItemsHook() != null && plugin.getMmoItemsHook().isEnabled()) {
+        // Check if it's an MMOItem first
+        if (plugin.getMmoItemsHook().isMMOItem(item)) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().info("[DEBUG] isDamaged: Item is MMOItem, checking MMOItems hook");
+            }
+            
+            boolean isDamaged = plugin.getMmoItemsHook().isDamaged(item);
+            
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                String mmoId = net.Indyuce.mmoitems.MMOItems.getID(item);
+                double current = plugin.getMmoItemsHook().getDurability(item);
+                double max = plugin.getMmoItemsHook().getMaxDurability(item);
+                plugin.getLogger().info("[DEBUG] MMOItem Check - ID: " + mmoId + 
+                    ", Current: " + current + ", Max: " + max + ", IsDamaged: " + isDamaged);
+            }
+            
+            return isDamaged;
+        }
+    }
+
+    // Check vanilla durability for non-MMOItems
+    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+        plugin.getLogger().info("[DEBUG] isDamaged: Checking vanilla damage for " + item.getType().name());
+    }
+
+    // First check if the item type is even damageable
+    if (!isDamageable(item)) {
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("[DEBUG] isDamaged: Item type " + item.getType().name() + " is not damageable");
+        }
+        return false;
+    }
+    
+    boolean vanillaDamaged = hasVanillaDamage(item);
+    
+    if (plugin.getConfig().getBoolean("settings.debug", false)) {
+        plugin.getLogger().info("[DEBUG] Vanilla item damage check: " + vanillaDamaged + " for " + item.getType().name());
+    }
+    
+    return vanillaDamaged;
+}
 
     /**
      * Check if an item has vanilla durability damage.
@@ -180,6 +198,8 @@ public class ItemUtils {
             case IRON_SWORD, IRON_PICKAXE, IRON_AXE, IRON_SHOVEL, IRON_HOE -> 251;
             case DIAMOND_SWORD, DIAMOND_PICKAXE, DIAMOND_AXE, DIAMOND_SHOVEL, DIAMOND_HOE -> 1562;
             case NETHERITE_SWORD, NETHERITE_PICKAXE, NETHERITE_AXE, NETHERITE_SHOVEL, NETHERITE_HOE -> 2032;
+
+            case MACE -> 500;
 
             case BOW, FISHING_ROD -> 385;
             case CROSSBOW, TRIDENT -> 251;

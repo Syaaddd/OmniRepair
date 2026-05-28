@@ -455,11 +455,11 @@ public class MMOItemsHook {
                                 }
                             }
                             
-                            // Found key but couldn't read value - assume damaged as fallback
+                            // Found key but couldn't read value - fall through to Method 4 instead of assuming damaged
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                                plugin.getLogger().info("[DEBUG] Method 3 Result: Found durability key but couldn't read value, assuming damaged");
+                                plugin.getLogger().info("[DEBUG] Method 3: Found durability key but couldn't read value, falling through to Method 4");
                             }
-                            return true;
+                            break;
                         }
                     }
                 }

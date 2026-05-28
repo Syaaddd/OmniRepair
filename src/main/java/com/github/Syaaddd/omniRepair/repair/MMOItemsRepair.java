@@ -73,6 +73,15 @@ public class MMOItemsRepair extends RepairHandler {
                     return false;
                 }
             }
+
+            // Check if the item is actually damaged
+            boolean isDamaged = plugin.getMmoItemsHook().isDamaged(item);
+            if (!isDamaged) {
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] MMOItems canRepair: Item " + type.getId() + ":" + id + " is not damaged");
+                }
+                return false;
+            }
         } catch (Exception e) {
             return false;
         }

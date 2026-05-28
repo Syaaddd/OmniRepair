@@ -6,6 +6,7 @@ import com.github.Syaaddd.omniRepair.gui.GUIManager;
 import com.github.Syaaddd.omniRepair.integration.MMOItemsHook;
 import com.github.Syaaddd.omniRepair.integration.VaultHook;
 import com.github.Syaaddd.omniRepair.integration.CustomEnchantHook;
+import com.github.Syaaddd.omniRepair.listeners.AnvilListener;
 import com.github.Syaaddd.omniRepair.listeners.GUIListener;
 import com.github.Syaaddd.omniRepair.listeners.RepairListener;
 import com.github.Syaaddd.omniRepair.repair.MMOItemsRepair;
@@ -53,6 +54,7 @@ public final class OmniRepair extends JavaPlugin {
     // Listeners
     private GUIListener guiListener;
     private RepairListener repairListener;
+    private AnvilListener anvilListener;
 
     // Commands
     private RepairCommand repairCommand;
@@ -165,8 +167,10 @@ public final class OmniRepair extends JavaPlugin {
     private void initializeListeners() {
         guiListener = new GUIListener(this);
         repairListener = new RepairListener(this);
+        anvilListener = new AnvilListener(this);
 
         getServer().getPluginManager().registerEvents(guiListener, this);
+        getServer().getPluginManager().registerEvents(anvilListener, this);
 
         getLogger().info("✓ Listeners registered");
     }
@@ -318,6 +322,13 @@ public final class OmniRepair extends JavaPlugin {
      */
     public RepairListener getRepairListener() {
         return repairListener;
+    }
+
+    /**
+     * Get the anvil listener.
+     */
+    public AnvilListener getAnvilListener() {
+        return anvilListener;
     }
 
     /**

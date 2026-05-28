@@ -93,6 +93,14 @@ public class GUIListener implements Listener {
             return;
         }
 
+        // Check if item type can have durability at all
+        if (!plugin.getItemUtils().isDamageable(itemInHand)) {
+            sendMessage(player, plugin.getMessages().getString("repair.not-damageable",
+                    "&cItem ini tidak memiliki durability dan tidak bisa direpair!"));
+            playErrorSound(player);
+            return;
+        }
+
         // Check if item can be repaired (damaged, not blacklisted, not soulbound)
         boolean canRepair = plugin.getItemUtils().canRepair(itemInHand);
 

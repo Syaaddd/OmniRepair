@@ -63,6 +63,12 @@ repair:
   # No items to repair
   no-items-to-repair: "&cNo damaged items found in your inventory!"
   
+  # Item cannot have durability (e.g., stick, dirt)
+  not-damageable: "&cItem ini tidak memiliki durability dan tidak bisa direpair!"
+
+  # Anvil protection - MMOItems cannot be enchanted in anvil
+  anvil-blocked: "&cItem RPG ini tidak dapat di-enchant melalui anvil!"
+
   # MMOItems specific
   mmoitems-not-detected: "&cMMOItems durability not detected. Using vanilla repair."
   mmoitems-repair-success: "&a✓ MMOItem repaired successfully!"
@@ -127,7 +133,9 @@ action-bar:
   repair-free: "&a✓ Item Repaired! &7(Free)"
   insufficient-funds: "&c✗ Insufficient funds!"
   not-damaged: "&c✗ Item not damaged!"
+  not-damageable: "&c✗ Item has no durability!"
   blacklisted: "&c✗ Cannot repair this item!"
+  anvil-blocked: "&c✗ RPG items cannot be enchanted in anvil!"
 
 # ═══════════════════════════════════════════════════════════════
 # BOSS BAR MESSAGES (Optional, for bulk repair progress)

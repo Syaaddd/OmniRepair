@@ -233,6 +233,15 @@ worldguard:
 # UPDATE CHECKER
 # ═══════════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════════
+# ANVIL PROTECTION
+# ═══════════════════════════════════════════════════════════════
+
+anvil:
+  # Block MMOItems from being enchanted via vanilla anvil
+  # Prevents EXP leak when players accidentally combine MMOItems with books
+  block-mmoitems-enchant: true
+
 update-checker:
   # Check for updates on startup
   enabled: true
