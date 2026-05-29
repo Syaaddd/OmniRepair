@@ -242,6 +242,11 @@ anvil:
   # Prevents EXP leak when players accidentally combine MMOItems with books
   block-mmoitems-enchant: true
 
+  # Jika kosong: semua MMOItems diblokir (default, backward compatible)
+  # Jika diisi: hanya tipe-tipe ini yang DIIZINKAN di-enchant
+  # Contoh: ["ARMOR", "TOOL", "DSJ"]
+  allowed-mmoitems-types: []
+
 update-checker:
   # Check for updates on startup
   enabled: true

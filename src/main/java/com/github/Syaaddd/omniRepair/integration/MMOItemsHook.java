@@ -149,6 +149,28 @@ public class MMOItemsHook {
     }
 
     /**
+     * Get the MMOItems type of an item.
+     * @return Type ID (e.g. "SWORD", "ARMOR", "TOOL"), or null if not an MMOItem
+     */
+    public String getItemType(ItemStack item) {
+        if (!enabled || item == null || item.getType() == Material.AIR) {
+            return null;
+        }
+
+        try {
+            net.Indyuce.mmoitems.api.Type type = net.Indyuce.mmoitems.MMOItems.getType(item);
+            if (type != null) {
+                return type.getId();
+            }
+        } catch (Exception e) {
+            if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                plugin.getLogger().warning("[DEBUG] getItemType error: " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get the current durability of an MMOItem.
      * Uses reflection for API compatibility across versions.
      * Falls back to NBT reading if reflection fails.

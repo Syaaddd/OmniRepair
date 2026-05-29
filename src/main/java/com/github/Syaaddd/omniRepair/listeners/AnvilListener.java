@@ -86,6 +86,19 @@ public class AnvilListener implements Listener {
         if (plugin.getMmoItemsHook() == null || !plugin.getMmoItemsHook().isEnabled()) {
             return false;
         }
-        return plugin.getMmoItemsHook().isMMOItem(item);
+        if (!plugin.getMmoItemsHook().isMMOItem(item)) {
+            return false;
+        }
+
+        // Check if specific MMOItem types are allowed to bypass the block
+        java.util.List<String> allowedTypes = plugin.getConfig().getStringList("anvil.allowed-mmoitems-types");
+        if (!allowedTypes.isEmpty()) {
+            String itemType = plugin.getMmoItemsHook().getItemType(item);
+            if (itemType != null && allowedTypes.contains(itemType.toUpperCase())) {
+                return false; // This type is allowed to be enchanted
+            }
+        }
+
+        return true;
     }
 }
