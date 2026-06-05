@@ -574,7 +574,15 @@ public class MMOItemsHook {
                                 return true;
                             }
 
-                            // Item has no durability stat - non-durability items cannot be repaired
+                            // Item has no MMOItems durability stat and no NBT durability
+                            // Fallback: check vanilla damage (for MMOItems using "Max Vanilla Durability" mode)
+                            if (plugin.getItemUtils().hasVanillaDamage(item)) {
+                                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                                    plugin.getLogger().info("[DEBUG] Method 4 - No MMOItems durability but has vanilla damage, accepting");
+                                }
+                                return true;
+                            }
+
                             if (plugin.getConfig().getBoolean("settings.debug", false)) {
                                 plugin.getLogger().info("[DEBUG] Method 4 - Valid MMOItem but no durability stat, denying repair");
                             }

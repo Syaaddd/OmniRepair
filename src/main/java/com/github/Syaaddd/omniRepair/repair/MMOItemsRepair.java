@@ -70,7 +70,10 @@ public class MMOItemsRepair extends RepairHandler {
             if (mmoItem != null && !mmoItem.hasData(net.Indyuce.mmoitems.ItemStats.DURABILITY)) {
                 // Also accept if the item already has durability stored in NBT
                 if (plugin.getMmoItemsHook().getDurability(item) < 0) {
-                    return false;
+                    // Also accept if item has vanilla damage (Max Vanilla Durability mode)
+                    if (!plugin.getItemUtils().hasVanillaDamage(item)) {
+                        return false;
+                    }
                 }
             }
 
@@ -210,11 +213,28 @@ public class MMOItemsRepair extends RepairHandler {
                 repairedItem.setItemMeta(repairedMeta);
             }
 
-            // Set durability to max using actual max durability from MMOItems API/NBT
-            if (plugin.getConfig().getBoolean("settings.debug", false)) {
-                plugin.getLogger().info("[DEBUG] Attempting to set MMOItems durability to max...");
+            // Check if item uses vanilla durability (Max Vanilla Durability mode)
+            boolean usesVanillaDurability = plugin.getMmoItemsHook().getDurability(repairedItem) < 0
+                && plugin.getMmoItemsHook().getMaxDurability(repairedItem) < 0
+                && plugin.getItemUtils().isDamageable(item);
+
+            if (usesVanillaDurability) {
+                // Repair via vanilla Damageable system for MMOItems with Max Vanilla Durability
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] Item uses Max Vanilla Durability, repairing via vanilla system");
+                }
+                org.bukkit.inventory.meta.ItemMeta meta = repairedItem.getItemMeta();
+                if (meta instanceof org.bukkit.inventory.meta.Damageable) {
+                    ((org.bukkit.inventory.meta.Damageable) meta).setDamage(0);
+                    repairedItem.setItemMeta(meta);
+                }
+            } else {
+                // Set durability to max using actual max durability from MMOItems API/NBT
+                if (plugin.getConfig().getBoolean("settings.debug", false)) {
+                    plugin.getLogger().info("[DEBUG] Attempting to set MMOItems durability to max...");
+                }
+                setMaxDurability(repairedItem, type, id);
             }
-            setMaxDurability(repairedItem, type, id);
 
             // Update lore to reflect correct durability values
             if (plugin.getConfig().getBoolean("mmoitems.sync-lore", true)) {
