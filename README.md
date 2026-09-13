@@ -3,7 +3,7 @@
 > **Repair Vanilla & RPG Items Safely. MMOItems Supported.**
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.1--SNAPSHOT-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.1-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/java-21+-orange?style=flat-square" alt="Java">
   <img src="https://img.shields.io/badge/platform-Paper%20%7C%20Spigot%20%7C%20Purpur-green?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/minecraft-1.21+-brightgreen?style=flat-square" alt="Minecraft">
@@ -53,9 +53,7 @@ mvnw.cmd clean package
 mvn clean package
 ```
 
-Output: `target/OmniRepair-1.0.1-SNAPSHOT.jar`
-
-See [BUILDING.md](BUILDING.md) for detailed build instructions.
+Output: `target/OmniRepair-1.0.1.jar`
 
 ---
 
@@ -169,15 +167,11 @@ mmoitems:
 
 ## 🏗️ Architecture
 
-OmniRepair uses **layered architecture** with design patterns:
+OmniRepair uses **layered architecture** with clean separation of concerns:
 
-- **Strategy Pattern** — `RepairHandler` abstract → `VanillaRepair` & `MMOItemsRepair`
-- **Facade Pattern** — `OmniRepair` main class provides centralized access
-- **Observer Pattern** — Bukkit event listeners for GUI events
-- **Dependency Injection** — Plugin instance injected via constructors
-- **Soft Dependency** — Graceful degradation for all integrations
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system design and code structure.
+- **Strategy Pattern** for repair algorithms
+- **Facade Pattern** for centralized access
+- **Soft Dependencies** for graceful degradation
 
 ---
 
@@ -214,15 +208,6 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system design and code struc
 - Check permission: `omnirepair.use`
 - Verify no conflicting plugins
 - Check console for errors
-
----
-
-## 📚 Documentation
-
-- [Architecture Details](ARCHITECTURE.md) — System design, patterns, code structure
-- [Build Instructions](BUILDING.md) — Compile from source, IDE setup
-- [Changelog](CHANGELOG.md) — Version history and updates
-- [Contributing](CONTRIBUTING.md) — How to contribute
 
 ---
 

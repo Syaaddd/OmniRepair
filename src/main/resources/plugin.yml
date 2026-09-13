@@ -1,5 +1,5 @@
 name: OmniRepair
-version: '1.0.1-SNAPSHOT'
+version: '1.0.1'
 main: com.github.Syaaddd.omniRepair.OmniRepair
 api-version: '1.21'
 authors: [Syaaddd]

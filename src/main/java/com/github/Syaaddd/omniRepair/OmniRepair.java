@@ -27,7 +27,7 @@ import java.io.InputStreamReader;
  * OmniRepair - Repair Vanilla & RPG Items Safely. MMOItems Supported.
  * 
  * @author Syaaddd
- * @version 1.0.0-SNAPSHOT
+ * @version 1.0.1
  */
 public final class OmniRepair extends JavaPlugin {
 
