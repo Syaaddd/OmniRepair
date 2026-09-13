@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/version-1.0.1-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/java-21+-orange?style=flat-square" alt="Java">
   <img src="https://img.shields.io/badge/platform-Paper%20%7C%20Spigot%20%7C%20Purpur-green?style=flat-square" alt="Platform">
-  <img src="https://img.shields.io/badge/minecraft-1.21+-brightgreen?style=flat-square" alt="Minecraft">
+  <img src="https://img.shields.io/badge/minecraft-26.2-brightgreen?style=flat-square" alt="Minecraft">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square" alt="License">
 </p>
 
