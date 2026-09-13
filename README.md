@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/version-1.0.1-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/java-21+-orange?style=flat-square" alt="Java">
   <img src="https://img.shields.io/badge/platform-Paper%20%7C%20Spigot%20%7C%20Purpur-green?style=flat-square" alt="Platform">
-  <img src="https://img.shields.io/badge/minecraft-26.2-brightgreen?style=flat-square" alt="Minecraft">
+  <img src="https://img.shields.io/badge/minecraft-1.21.5+-brightgreen?style=flat-square" alt="Minecraft">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square" alt="License">
 </p>
 
@@ -32,8 +32,8 @@ OmniRepair is a lightweight, performance-focused Minecraft repair plugin that su
 
 ### Requirements
 
-- **Java 25+**
-- **Paper/Spigot/Purpur 1.21+**
+- **Java 21+**
+- **Paper/Spigot/Purpur 1.21.5+**
 - **Optional:** MMOItems 6.9+, Vault 1.7+, WorldGuard 7.0+
 
 ### Quick Start
