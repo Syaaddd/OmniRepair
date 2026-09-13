@@ -47,3 +47,7 @@ plugins/OmniRepair/
 build.ps1
 compile.ps1
 quick-build.bat
+
+# IDE-specific files
+.qwen/
+*.iml
