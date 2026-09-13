@@ -32,7 +32,7 @@ OmniRepair is a lightweight, performance-focused Minecraft repair plugin that su
 
 ### Requirements
 
-- **Java 21+**
+- **Java 25+**
 - **Paper/Spigot/Purpur 1.21+**
 - **Optional:** MMOItems 6.9+, Vault 1.7+, WorldGuard 7.0+
 
