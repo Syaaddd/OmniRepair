@@ -34,6 +34,7 @@ buildNumber.properties
 .settings/
 .project
 .classpath
+*.class
 
 # OS
 .DS_Store
@@ -41,3 +42,8 @@ Thumbs.db
 
 # Plugin config (don't commit server configs)
 plugins/OmniRepair/
+
+# Build scripts (local development only)
+build.ps1
+compile.ps1
+quick-build.bat
